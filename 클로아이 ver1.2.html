@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CLO:AI - 스마트 올라운드 TPO 스타일러 (v9.6)</title>
+    <title>CLO:AI - 스마트 올라운드 TPO 스타일러 (v9.7)</title>
     <style>
         /* 🌌 미니멀 화이트 & 시안 테마 베이스 */
         *, *::before, *::after {
@@ -434,7 +434,7 @@
         .icon-large { width: 44px; height: 44px; stroke: #cbd5e1;
         }
 
-        /* 데이터 전송 최상단 바 스타일 */
+        /* ☁️ 상단 클라우드 데이터 전송 및 동기화 바 */
         .sync-bar {
             max-width: 1000px;
             width: 100%;
@@ -448,16 +448,27 @@
             align-items: center;
             box-shadow: 0 4px 12px rgba(148, 163, 184, 0.05);
         }
-        .sync-btn-group { display: flex; gap: 8px;
+        .sync-info {
+            display: flex;
+            flex-direction: column;
         }
-        .btn-sync-export { background-color: #0284c7; color: white; padding: 8px 14px; font-size: 0.8rem;
-            border-radius: 8px; }
-        .btn-sync-export:hover { background-color: #0369a1;
+        .sync-btn-group { display: flex; gap: 8px; }
+        .btn-sync-action { background-color: #0284c7; color: white; padding: 8px 14px; font-size: 0.8rem; border-radius: 8px; font-weight: 600; }
+        .btn-sync-action:hover { background-color: #0369a1; }
+        .btn-sync-setup { background-color: #475569; color: white; padding: 8px 14px; font-size: 0.8rem; border-radius: 8px; font-weight: 600; }
+        .btn-sync-setup:hover { background-color: #334155; }
+        .cloud-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-left: 8px;
         }
-        .btn-sync-import { background-color: #0f766e; color: white; padding: 8px 14px; font-size: 0.8rem;
-            border-radius: 8px; }
-        .btn-sync-import:hover { background-color: #115e59;
-        }
+        .badge-offline { background-color: #fee2e2; color: #ef4444; }
+        .badge-online { background-color: #dcfce7; color: #166534; }
 
         /* 로딩 스피너 애니메이션 */
         @keyframes spin { 0% { transform: rotate(0deg);
@@ -474,19 +485,26 @@
             }
             .coordination-slot { height: 220px;
             }
-            .sync-bar { flex-direction: column; gap: 10px; text-align: center;
-            }
+            .sync-bar { flex-direction: column; gap: 10px; text-align: center; }
+            .sync-info { align-items: center; }
         }
     </style>
 </head>
 <body>
 
+<!-- 📱 [클라우드 실시간 동기화 정보 표시 바] -->
 <div class="sync-bar">
-    <span style="font-size: 0.85rem; font-weight: 700; color: #475569;">📱 기기간 실시간 옷장 전송</span>
-    <div class="sync-bar-desc" style="font-size: 0.78rem; color: #94a3b8;">컴퓨터에서 내보낸 후 폰에서 가져오기를 누르세요!</div>
+    <div class="sync-info">
+        <span style="font-size: 0.85rem; font-weight: 700; color: #475569;">
+            ☁️ 실시간 클라우드 자동 저장소
+            <span id="cloudStatusBadge" class="cloud-badge badge-offline">임시 로컬 모드</span>
+        </span>
+        <div id="syncCodeText" class="sync-bar-desc" style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">
+            설정 버튼을 눌러 online 보안 데이터 저장소를 연결해 보세요.
+        </div>
+    </div>
     <div class="sync-btn-group">
-        <button class="btn-sync-export" onclick="exportToMobile()">💻 컴퓨터 ➔ 폰 데이터 내보내기</button>
-        <button class="btn-sync-import" onclick="importFromComputer()">🔄 폰에서 데이터 동기화 받기</button>
+        <button class="btn-sync-setup" onclick="openSyncSettings()">⚙️ 동기화 및 DB 설정</button>
     </div>
 </div>
 
@@ -542,6 +560,7 @@ height:24px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polylin
     </div>
 </div>
 
+<!-- 옷 등록 모달 -->
 <div id="registerModal" class="modal-overlay" onclick="handleOverlayClick(event, 'registerModal')">
     <div class="modal-content">
         <button class="modal-close" onclick="toggleModal('registerModal', false)">
@@ -606,6 +625,7 @@ onchange="handleRegistrationCategoryChange()">
     </div>
 </div>
 
+<!-- 내 옷장 모달 -->
 <div id="closetModal" class="modal-overlay" onclick="handleOverlayClick(event, 'closetModal')">
     <div class="modal-content" style="max-width: 650px;">
         <button class="modal-close" onclick="toggleModal('closetModal', false)">
@@ -618,7 +638,6 @@ onchange="handleRegistrationCategoryChange()">
                 <h3>🔍 스마트 검색 필터</h3>
                 <button class="btn-mini-storage" onclick="toggleMiniStorage(event)">⚙️ 데이터 관리</button>
                 <div id="miniStoragePopover" class="mini-storage-popover">
-             
                     <button class="btn-popover-action" onclick="exportClosetData()">📥 일괄 백업</button>
                     <button class="btn-popover-action" onclick="document.getElementById('importFileControl').click()">📤 일괄 복구</button>
                     <input type="file" id="importFileControl" accept=".json" onchange="importClosetData(this)" style="display:none;">
@@ -676,18 +695,255 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
     </div>
 </div>
 
+<!-- ☁️ 동기화 및 DB 설정 팝업 모달 -->
+<div id="syncSettingsModal" class="modal-overlay" onclick="handleOverlayClick(event, 'syncSettingsModal')">
+    <div class="modal-content" style="max-width: 480px;">
+        <button class="modal-close" onclick="toggleModal('syncSettingsModal', false)">
+            <svg class="icon-svg"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <h2>☁️ 기기간 자동 저장 및 실시간 동기화</h2>
+        
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label style="font-size: 0.82rem; color: #475569; font-weight: bold; margin-bottom: 6px;">1. 나만의 옷장 동기화 코드 (PC/폰 공통 입력)</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="syncCodeInput" placeholder="예: my-closet-77" style="flex: 1;">
+                <button class="btn-submit" style="margin-top: 0; padding: 10px 16px; font-size: 0.85rem;" onclick="saveSyncCode()">코드 저장</button>
+            </div>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px; line-height: 1.4;">
+                * 서로 다른 기기에서 이 코드를 똑같이 맞춰주면 가입 없이 즉시 실시간 동기화가 이루어집니다.
+            </p>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+            <label style="font-size: 0.82rem; color: #475569; font-weight: bold; margin-bottom: 6px;">2. 보안 클라우드 설정 (깃허브 배포 전용)</label>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px; line-height: 1.4;">
+                배포된 GitHub 페이지에서도 무제한 자동 저장을 사용하려면 구글 파이어베이스(Firebase) Config 정보를 붙여넣어 주세요. (기본 개발 환경에서는 입력하지 않아도 자동 제공됩니다.)
+            </p>
+            <textarea id="firebaseConfigInput" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", ...}' style="width: 100%; height: 100px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.75rem; font-family: monospace; resize: none;"></textarea>
+            <button class="btn-submit" style="margin-top: 8px;" onclick="saveFirebaseConfig()">클라우드 데이터베이스 설정 저장</button>
+        </div>
+    </div>
+</div>
+
+<!-- 구글 클라우드 보안 데이터베이스 모듈 동적 로드 -->
+<script type="module">
+    // Firebase CDN 모듈 가져오기
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    // 전역으로 함수 연결을 위한 설정
+    window.saveSyncCode = saveSyncCode;
+    window.saveFirebaseConfig = saveFirebaseConfig;
+    window.openSyncSettings = openSyncSettings;
+
+    // 환경 변수 검출
+    const envAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-cloai-app';
+    const envFirebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+
+    let db = null;
+    let auth = null;
+    let activeSyncCode = localStorage.getItem('cloai_sync_code') || '';
+    let isCloudActive = false;
+    let firestoreUnsubscribe = null;
+
+    // 로드 시 자동 부팅 시작
+    initSyncSystem();
+
+    // 동기화 시스템 부팅 함수
+    async function initSyncSystem() {
+        // 1. 설정된 Firebase Config 검색 (환경주입값 우선 -> 유저 로컬스토리지 입력값 순)
+        let configToUse = null;
+        if (envFirebaseConfigStr) {
+            configToUse = JSON.parse(envFirebaseConfigStr);
+        } else {
+            const userSavedConfig = localStorage.getItem('cloai_user_firebase_config');
+            if (userSavedConfig) {
+                try {
+                    configToUse = JSON.parse(userSavedConfig);
+                } catch(e) {
+                    console.error("저장된 데이터베이스 JSON 설정 형식에 오류가 있습니다.");
+                }
+            }
+        }
+
+        // 2. 동기화 코드 초기 검출
+        if (!activeSyncCode) {
+            // 랜덤 코드 생성
+            activeSyncCode = 'cloai-' + Math.floor(1000 + Math.random() * 9000);
+            localStorage.setItem('cloai_sync_code', activeSyncCode);
+        }
+        document.getElementById('syncCodeInput').value = activeSyncCode;
+
+        // 3. 파이어베이스 연결 시도
+        if (configToUse) {
+            try {
+                const app = initializeApp(configToUse);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // 익명 인증 수행
+                await signInAnonymously(auth);
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        isCloudActive = true;
+                        updateCloudStatusUI(true);
+                        subscribeToCloudCloset();
+                    } else {
+                        isCloudActive = false;
+                        updateCloudStatusUI(false);
+                    }
+                });
+            } catch (err) {
+                console.error("클라우드 연결 실패:", err);
+                isCloudActive = false;
+                updateCloudStatusUI(false);
+            }
+        } else {
+            isCloudActive = false;
+            updateCloudStatusUI(false);
+        }
+    }
+
+    // 클라우드에서 실시간 데이터 감시 및 로컬 동기화
+    function subscribeToCloudCloset() {
+        if (!db || !isCloudActive || !activeSyncCode) return;
+
+        if (firestoreUnsubscribe) {
+            firestoreUnsubscribe();
+        }
+
+        // RULE 1 규격 충족: /artifacts/{appId}/users/{userId}/{collectionName}
+        const collectionRef = collection(db, 'artifacts', envAppId, 'users', activeSyncCode, 'clothes');
+
+        // RULE 2 규격 충족: 정렬이나 추가 필터를 걸지 않고 전체 실시간 로드 후 메모리 매핑
+        firestoreUnsubscribe = onSnapshot(collectionRef, (snapshot) => {
+            const tempDB = [];
+            snapshot.forEach((doc) => {
+                tempDB.push({ id: doc.id, ...doc.data() });
+            });
+
+            if (tempDB.length > 0) {
+                window.clothesDB = tempDB;
+                window.saveToStorageOnlyLocal(); // 임시 로컬 캐싱
+                window.updateClosetUI();
+            }
+        }, (error) => {
+            console.error("실시간 수신 에러:", error);
+        });
+    }
+
+    // 클라우드 상태 바 UI 업데이트
+    function updateCloudStatusUI(online) {
+        const badge = document.getElementById('cloudStatusBadge');
+        const desc = document.getElementById('syncCodeText');
+        
+        if (online) {
+            badge.className = "cloud-badge badge-online";
+            badge.textContent = "클라우드 동기화 완료";
+            desc.innerHTML = `현재 동기화 코드: <strong style="color: #0f172a; text-decoration: underline;">${activeSyncCode}</strong> (이 주소의 기기들과 실시간 데이터가 연동 중입니다!)`;
+        } else {
+            badge.className = "cloud-badge badge-offline";
+            badge.textContent = "임시 로컬 모드";
+            desc.innerHTML = `인앱 브라우저 및 새로고침 데이터 휘발방지를 위해 설정 버튼을 눌러 파이어베이스를 연동하세요.`;
+        }
+    }
+
+    // 동기화 설정 팝업 열기
+    function openSyncSettings() {
+        const userSavedConfig = localStorage.getItem('cloai_user_firebase_config') || '';
+        document.getElementById('firebaseConfigInput').value = userSavedConfig;
+        document.getElementById('syncCodeInput').value = activeSyncCode;
+        window.toggleModal('syncSettingsModal', true);
+    }
+
+    // 동기화 코드 저장
+    function saveSyncCode() {
+        const code = document.getElementById('syncCodeInput').value.trim();
+        if (!code) return alert("동기화 코드를 공백 없이 적어주세요!");
+        
+        activeSyncCode = code;
+        localStorage.setItem('cloai_sync_code', code);
+        alert(`동기화 코드가 [${code}]로 성공적으로 변경되었습니다.`);
+        window.toggleModal('syncSettingsModal', false);
+        
+        // 데이터베이스 수신지 변경 및 재연결
+        if (isCloudActive) {
+            subscribeToCloudCloset();
+        }
+    }
+
+    // 파이어베이스 수동 세팅 저장
+    function saveFirebaseConfig() {
+        const configStr = document.getElementById('firebaseConfigInput').value.trim();
+        if (!configStr) {
+            localStorage.removeItem('cloai_user_firebase_config');
+            alert("입력 정보를 비웠습니다. 임시 로컬 모드로 동작합니다.");
+        } else {
+            try {
+                JSON.parse(configStr); // JSON 형식 검증
+                localStorage.setItem('cloai_user_firebase_config', configStr);
+                alert("구글 파이어베이스 클라우드 설정이 안전하게 로컬에 기록되었습니다! 앱이 즉시 실시간 연결 모드로 재부팅됩니다.");
+            } catch(e) {
+                return alert("올바른 JSON 형식이 아닙니다. 파이어베이스 웹 콘솔에서 제공한 중괄호({})로 이루어진 Config 전체 코드를 붙여넣어 주세요.");
+            }
+        }
+        window.toggleModal('syncSettingsModal', false);
+        initSyncSystem(); // 재부팅
+    }
+
+    // 외부로 파이어베이스 저장 동작 제공을 위한 인터페이스화
+    window.cloudSaveNewItem = async function(newItem) {
+        if (!db || !isCloudActive) return false;
+        try {
+            const docRef = doc(db, 'artifacts', envAppId, 'users', activeSyncCode, 'clothes', String(newItem.id));
+            await setDoc(docRef, newItem);
+            return true;
+        } catch(e) {
+            console.error("클라우드 쓰기 오류:", e);
+            return false;
+        }
+    };
+
+    window.cloudUpdateItemStatus = async function(id, newStatus) {
+        if (!db || !isCloudActive) return false;
+        try {
+            const docRef = doc(db, 'artifacts', envAppId, 'users', activeSyncCode, 'clothes', String(id));
+            await updateDoc(docRef, { status: newStatus });
+            return true;
+        } catch(e) {
+            console.error("클라우드 상태수정 오류:", e);
+            return false;
+        }
+    };
+
+    window.cloudDeleteItem = async function(id) {
+        if (!db || !isCloudActive) return false;
+        try {
+            const docRef = doc(db, 'artifacts', envAppId, 'users', activeSyncCode, 'clothes', String(id));
+            await deleteDoc(docRef);
+            return true;
+        } catch(e) {
+            console.error("클라우드 삭제 오류:", e);
+            return false;
+        }
+    };
+</script>
+
 <script>
     // 🔑 확보하신 제미나이 API Key가 여기에 정확히 주입되어 있습니다.
     const GEMINI_API_KEY = "AQ.Ab8RN6JuOFEI2AnwRckIECoQVBc0btTfJYQHAXLeLYmwMXxbTA";
 
     let defaultClothes = [
-        {name: "기본 크루넥 맨투맨", categories: ["상의"], subcategory: "맨투맨/스웨트", season: "사계절", occasions: ["일상 생활", "데이트"], status: "보관중", img: ""},
-        {name: "클래식 흑청 데님", categories: ["하의"], subcategory: "청바지", season: "사계절", occasions: ["출근길", "일상 생활", "데이트"], status: "보관중", img: ""},
-        {name: "화이트 데일리 스니커즈", categories: ["신발"], subcategory: "스니커즈/운동화", season: "사계절", occasions: ["출근길", "일상 생활", "운동", "데이트"], status: "보관중", img: ""}
+        {id: 10001, name: "기본 크루넥 맨투맨", categories: ["상의"], subcategory: "맨투맨/스웨트", season: "사계절", occasions: ["일상 생활", "데이트"], status: "보관중", img: ""},
+        {id: 10002, name: "클래식 흑청 데님", categories: ["하의"], subcategory: "청바지", season: "사계절", occasions: ["출근길", "일상 생활", "데이트"], status: "보관중", img: ""},
+        {id: 10003, name: "화이트 데일리 스니커즈", categories: ["신발"], subcategory: "스니커즈/운동화", season: "사계절", occasions: ["출근길", "일상 생활", "운동", "데이트"], status: "보관중", img: ""}
     ];
 
     let rawData = JSON.parse(localStorage.getItem('clothesDB_v9')) || defaultClothes;
-    let clothesDB = rawData.map(item => {
+    window.clothesDB = rawData.map(item => {
+        if (!item.id) item.id = Date.now() + Math.floor(Math.random() * 100);
         if (item.category && !item.categories) { item.categories = [item.category]; delete item.category; }
         if (item.categories && item.categories.includes('겉옷')) item.categories = item.categories.map(c => c === '겉옷' ? '아우터' : c);
         if (!item.subcategory) item.subcategory = "선택 안함";
@@ -725,7 +981,14 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
     let selectedCategory = "전체";
     let currentOccasion = "출근길";
 
-    function saveToStorage() { localStorage.setItem('clothesDB_v9', JSON.stringify(clothesDB)); }
+    // 동기화 모듈에서도 접근할 수 있도록 로컬 전용 저장소 저장 함수 노출
+    window.saveToStorageOnlyLocal = function() {
+        localStorage.setItem('clothesDB_v9', JSON.stringify(window.clothesDB));
+    };
+
+    function saveToStorage() { 
+        window.saveToStorageOnlyLocal();
+    }
     
     function toggleMiniStorage(e) { 
         e.stopPropagation();
@@ -733,7 +996,10 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
         pop.style.display = pop.style.display === 'flex' ? 'none' : 'flex';
     }
     
-    document.addEventListener('click', () => { document.getElementById('miniStoragePopover').style.display = 'none'; });
+    document.addEventListener('click', () => { 
+        const pop = document.getElementById('miniStoragePopover');
+        if(pop) pop.style.display = 'none'; 
+    });
     
     function changeOccasion(mode, btn) { 
         currentOccasion = mode; 
@@ -742,10 +1008,10 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
         resetRecommendUI();
     }
 
-    /* 📱 스마트 기기간 클립보드 전송 시스템 */
+    /* 📱 수동 내보내기/가져오기 (클라우드가 꺼져있을 때의 보조 수단으로 유지) */
     function exportToMobile() {
-        if(clothesDB.length === 0) return alert('내보낼 옷장 데이터가 비어있습니다.');
-        const dataStr = JSON.stringify(clothesDB);
+        if(window.clothesDB.length === 0) return alert('내보낼 옷장 데이터가 비어있습니다.');
+        const dataStr = JSON.stringify(window.clothesDB);
         navigator.clipboard.writeText(dataStr).then(() => {
             alert("👗 옷장 데이터가 메모리에 복사되었습니다!\n카톡이나 메시지로 나에게 전송한 후, 핸드폰에서 [폰에서 데이터 동기화 받기] 버튼을 누르고 붙여넣으세요.");
         }).catch(err => {
@@ -759,7 +1025,7 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
             try {
                 const parsed = JSON.parse(inputData);
                 if (Array.isArray(parsed)) {
-                    clothesDB = parsed;
+                    window.clothesDB = parsed;
                     saveToStorage();
                     updateSubFilterOptions(selectedCategory);
                     updateClosetUI();
@@ -770,8 +1036,8 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
     }
 
     function exportClosetData() {
-        if(clothesDB.length === 0) return alert('백업할 옷 데이터가 없습니다.');
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(clothesDB));
+        if(window.clothesDB.length === 0) return alert('백업할 옷 데이터가 없습니다.');
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.clothesDB));
         const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "cloai_tpo_backup.json");
         document.body.appendChild(dl); dl.click(); dl.remove(); alert('백업 성공!');
     }
@@ -784,7 +1050,7 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
                 let importedData = JSON.parse(e.target.result);
                 if(Array.isArray(importedData)) {
                     if(confirm(`[총 ${importedData.length}개]의 데이터를 복구할까요?`)) {
-                        clothesDB = importedData;
+                        window.clothesDB = importedData;
                         saveToStorage(); updateSubFilterOptions(selectedCategory); updateClosetUI(); alert('복구 완료!');
                     }
                 }
@@ -796,7 +1062,7 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
 
     function toggleModal(modalId, show) {
         const modal = document.getElementById(modalId);
-        modal.style.display = show ? 'flex' : 'none';
+        if(modal) modal.style.display = show ? 'flex' : 'none';
         if (show && modalId === 'closetModal') { updateSubFilterOptions(selectedCategory); updateClosetUI(); }
         if (!show && modalId === 'registerModal') {
             document.getElementById('clothCategory').value = "";
@@ -834,9 +1100,19 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
         if (!categorySelect.value) return alert('대분류 카테고리를 지정해 주세요!');
         if (checkedOccasions.length === 0) return alert('착용 상황(TPO) 태그를 하나 이상 선택해 주세요!');
         const file = fileInput.files[0];
-        const completeAction = (imgData) => {
-            const newCloth = { name: nameInput.value, categories: [categorySelect.value], subcategory: subSelect.value || "일반", season: seasonInput.value, occasions: checkedOccasions, status: "보관중", img: imgData };
-            clothesDB.push(newCloth); saveToStorage(); nameInput.value = ""; fileInput.value = "";
+        const completeAction = async (imgData) => {
+            const newItemId = Date.now();
+            const newCloth = { id: newItemId, name: nameInput.value, categories: [categorySelect.value], subcategory: subSelect.value || "일반", season: seasonInput.value, occasions: checkedOccasions, status: "보관중", img: imgData };
+            
+            window.clothesDB.push(newCloth); 
+            saveToStorage();
+
+            // ☁️ 클라우드 저장소가 활성화되어 있다면 실시간 쓰기 요청 전송
+            if (window.cloudSaveNewItem) {
+                await window.cloudSaveNewItem(newCloth);
+            }
+
+            nameInput.value = ""; fileInput.value = "";
             categorySelect.value = ""; document.getElementById('subCategoryFormGroup').style.display = 'none';
             alert(`'${newCloth.name}' 옷장에 안전하게 등록 완료!`); toggleModal('registerModal', false);
         };
@@ -861,10 +1137,11 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
 
     function updateClosetUI() {
         const gridEl = document.getElementById('closetGrid');
+        if(!gridEl) return;
         gridEl.innerHTML = '';
         const selectedSub = document.getElementById('subFilter').value; const selectedSeason = document.getElementById('seasonFilter').value;
         document.getElementById('selectAllCheckbox').checked = false;
-        const filteredDB = clothesDB.map((item, originalIndex) => ({...item, originalIndex}))
+        const filteredDB = window.clothesDB.map((item, originalIndex) => ({...item, originalIndex}))
             .filter(item => {
                 const matchCat = (selectedCategory === "전체" || item.categories.includes(selectedCategory));
                 const matchSub = (selectedSub === "전체" || item.subcategory === selectedSub);
@@ -891,13 +1168,48 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
         });
     }
 
+    window.updateClosetUI = updateClosetUI;
+
     function getSelectedOriginalIndices() { return Array.from(document.querySelectorAll('.select-checkbox:checked')).map(cb => parseInt(cb.getAttribute('data-index'))); }
-    function batchMoveToWash() { const idxs = getSelectedOriginalIndices(); if(idxs.length === 0) return alert('선택된 아이템이 없습니다.');
-        idxs.forEach(i => clothesDB[i].status = "세탁중"); saveToStorage(); updateClosetUI(); }
-    function batchWashComplete() { const idxs = getSelectedOriginalIndices();
-        if(idxs.length === 0) return alert('선택된 아이템이 없습니다.'); idxs.forEach(i => clothesDB[i].status = "보관중"); saveToStorage(); updateClosetUI(); }
-    function batchDelete() { const idxs = getSelectedOriginalIndices(); if(idxs.length === 0) return alert('선택된 아이템이 없습니다.');
-        if(confirm('선택한 아이템을 옷장에서 완전히 제거할까요?')) { clothesDB = clothesDB.filter((_, i) => !idxs.includes(i)); saveToStorage(); updateSubFilterOptions(selectedCategory); updateClosetUI(); } 
+    
+    async function batchMoveToWash() { 
+        const idxs = getSelectedOriginalIndices(); if(idxs.length === 0) return alert('선택된 아이템이 없습니다.');
+        for (const i of idxs) {
+            window.clothesDB[i].status = "세탁중";
+            if (window.cloudUpdateItemStatus) {
+                await window.cloudUpdateItemStatus(window.clothesDB[i].id, "세탁중");
+            }
+        }
+        saveToStorage(); updateClosetUI(); 
+    }
+    
+    async function batchWashComplete() { 
+        const idxs = getSelectedOriginalIndices(); if(idxs.length === 0) return alert('선택된 아이템이 없습니다.'); 
+        for (const i of idxs) {
+            window.clothesDB[i].status = "보관중";
+            if (window.cloudUpdateItemStatus) {
+                await window.cloudUpdateItemStatus(window.clothesDB[i].id, "보관중");
+            }
+        }
+        saveToStorage(); updateClosetUI();
+    }
+    
+    async function batchDelete() { 
+        const idxs = getSelectedOriginalIndices(); if(idxs.length === 0) return alert('선택된 아이템이 없습니다.');
+        if(confirm('선택한 아이템을 옷장에서 완전히 제거할까요?')) { 
+            const targetsToDelete = window.clothesDB.filter((_, i) => idxs.includes(i));
+            window.clothesDB = window.clothesDB.filter((_, i) => !idxs.includes(i)); 
+            saveToStorage(); 
+            
+            if (window.cloudDeleteItem) {
+                for (const item of targetsToDelete) {
+                    await window.cloudDeleteItem(item.id);
+                }
+            }
+            
+            updateSubFilterOptions(selectedCategory); 
+            updateClosetUI(); 
+        } 
     }
 
     /* 🧠 [진짜 제미나이 AI 연동 코어 엔진] */
@@ -911,7 +1223,7 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
         const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
         
         // 현재 보관중(세탁중이 아닌)인 옷 목록만 필터링해서 제미나이 컨텍스트로 주입
-        const availableClothes = clothesDB.filter(c => c.status === "보관중");
+        const availableClothes = window.clothesDB.filter(c => c.status === "보관중");
         const closetContext = availableClothes.map(c => `[카테고리: ${c.categories.join(',')}] 명칭: ${c.name} (세부: ${c.subcategory}, 계절태그: ${c.season})`).join('\n');
         
         const promptText = `
@@ -990,12 +1302,12 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
         }
 
         // 제미나이가 추천해 준 옷의 문자열 명칭을 기반으로 데이터베이스 객체 매칭
-        currentTop = clothesDB.find(c => c.name === result.top && c.status === '보관중') ||
-                     clothesDB.find(c => c.categories.includes('상의') && c.status === '보관중');
-        currentBottom = clothesDB.find(c => c.name === result.bottom && c.status === '보관중') ||
-                        clothesDB.find(c => c.categories.includes('하의') && c.status === '보관중');
-        currentShoes = clothesDB.find(c => c.name === result.shoes && c.status === '보관중') ||
-                       clothesDB.find(c => c.categories.includes('신발') && c.status === '보관중');
+        currentTop = window.clothesDB.find(c => c.name === result.top && c.status === '보관중') ||
+                     window.clothesDB.find(c => c.categories.includes('상의') && c.status === '보관중');
+        currentBottom = window.clothesDB.find(c => c.name === result.bottom && c.status === '보관중') ||
+                        window.clothesDB.find(c => c.categories.includes('하의') && c.status === '보관중');
+        currentShoes = window.clothesDB.find(c => c.name === result.shoes && c.status === '보관중') ||
+                       window.clothesDB.find(c => c.categories.includes('신발') && c.status === '보관중');
 
         if (!currentTop || !currentBottom) {
             box.innerHTML = `
@@ -1055,7 +1367,7 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
     }
 
     function shuffleSingleSlot(categoryKey) {
-        const pool = clothesDB.filter(c => c.categories.includes(categoryKey) && c.status === '보관중');
+        const pool = window.clothesDB.filter(c => c.categories.includes(categoryKey) && c.status === '보관중');
         if(pool.length <= 1) return alert('교체할 수 있는 다른 여분의 보관중인 옷이 없습니다.');
         
         if(categoryKey === '상의') {
@@ -1076,11 +1388,19 @@ align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82r
         renderCodiResultUI("사용자가 슬롯 셔플 기능을 통해 일부 아이템을 직접 커스텀 교체하였습니다.");
     }
 
-    function wearCodi() {
+    async function wearCodi() {
         if (!currentTop || !currentBottom || !currentShoes) return;
-        [currentTop, currentBottom, currentShoes].forEach(item => {
-            if (!(item.categories.includes('신발') || item.categories.includes('악세사리'))) item.status = '세탁중';
-        });
+        
+        // 상태값 일괄 수정 및 저장
+        for (const item of [currentTop, currentBottom, currentShoes]) {
+            if (!(item.categories.includes('신발') || item.categories.includes('악세사리'))) {
+                item.status = '세탁중';
+                if (window.cloudUpdateItemStatus) {
+                    await window.cloudUpdateItemStatus(item.id, '세탁중');
+                }
+            }
+        }
+        
         alert(`선택하신 코디로 매칭 및 착용 기록이 완료되었습니다.\n착용한 상/하의는 세탁중 상태로 전환됩니다.`);
         resetRecommendUI(); saveToStorage();
     }
