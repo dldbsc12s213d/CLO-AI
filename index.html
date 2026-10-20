@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLO:AI - 스마트 올라운드 TPO 스타일러 (v11.0)</title>
+    <style>
+        /* 🌌 미니멀 화이트 & 시안 테마 베이스 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 와이드 대시보드 그리드 레이아웃 */
+        .main-container {
+            max-width: 1000px;
+            width: 100%;
+            display: flex;
+            gap: 24px;
+            align-items: stretch;
+        }
+
+        .hero-card {
+            flex: 2.2;
+            background-color: #ffffff;
+            padding: 35px 30px;
+            border-radius: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 30px rgba(148, 163, 184, 0.12);
+            text-align: center;
+        }
+
+        /* 메인 화면 우측 배치 버튼 패널 */
+        .side-panel {
+            flex: 0.8;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        h2 {
+            color: #0f172a;
+            margin-top: 0;
+            margin-bottom: 24px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        h3 {
+            color: #64748b;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0 0 12px 0;
+            text-align: left;
+        }
+
+        /* 🎯 TPO 상황별 모드 탭 컨트롤러 */
+        .occasion-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            width: 100%;
+            background-color: #f1f5f9;
+            padding: 6px;
+            border-radius: 16px;
+        }
+        .occasion-btn {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            background-color: transparent;
+            color: #64748b;
+            border: none;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .occasion-btn.active {
+            background-color: #ffffff;
+            color: #00b4d8;
+            box-shadow: 0 4px 12px rgba(148, 163, 184, 0.15);
+        }
+
+        /* 📸 추천 박스 - 이미지 중심 디자인 */
+        .recommend-box {
+            background-color: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 20px;
+            padding: 24px;
+            min-height: 340px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .recommend-box.active {
+            border: 2px solid #00b4d8;
+            background-color: #f0fdfa;
+            box-shadow: 0 10px 25px rgba(0, 180, 216, 0.08);
+        }
+        
+        /* 대형 이미지 중심의 가로 3열 레이아웃 */
+        .coordination-view {
+            display: grid;
+            grid-template-columns: repeat(var(--slot-count, 3), 1fr);
+            gap: 16px;
+            width: 100%;
+        }
+        
+        /* 개별 슬롯 컨테이너 (상하의신발 클릭 시 셔플 동작용 구조) */
+        .slot-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            border-radius: 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        
+        .slot-container:hover {
+            transform: translateY(-4px);
+        }
+
+        /* 개별 파트 변경을 유도하는 호버 레이어 */
+        .reroll-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 180, 216, 0.85);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            border-radius: 18px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            backdrop-filter: blur(2px);
+        }
+        .slot-container:hover .reroll-overlay {
+            opacity: 1;
+        }
+
+        /* 사진 파트 극대화 크기 조절 */
+        .coordination-slot {
+            width: 100%;
+            height: 190px;
+            border-radius: 12px;
+            object-fit: contain;
+            border: 1px solid #f1f5f9;
+            background-color: #f8fafc;
+        }
+        
+        .slot-info {
+            text-align: center;
+            margin-top: 12px;
+            width: 100%;
+        }
+        
+        .slot-type {
+            font-size: 0.72rem;
+            color: #00b4d8;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        
+        .slot-label {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 🕹️ 버튼 인터페이스 컴포넌트 */
+        button {
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-recommend { 
+            background-color: #00b4d8;
+            color: #ffffff; 
+            width: 100%; 
+            margin-bottom: 12px;
+            box-shadow: 0 4px 14px rgba(0, 180, 216, 0.3);
+        }
+        .btn-recommend:hover { 
+            background-color: #0096c7;
+            box-shadow: 0 6px 20px rgba(0, 180, 216, 0.45);
+        }
+        
+        .btn-wear { background-color: #f1f5f9;
+            color: #94a3b8; cursor: not-allowed; width: 100%; border: 1px solid #e2e8f0;}
+        .btn-wear.active { background-color: #0f172a;
+            color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+        }
+        
+        .btn-open-popup { 
+            flex: 1;
+            background-color: #ffffff; 
+            color: #00b4d8; 
+            border: 1px solid #00b4d8; 
+            flex-direction: column;
+            gap: 12px;
+            font-size: 1.05rem;
+            box-shadow: 0 4px 12px rgba(0, 180, 216, 0.05);
+        }
+        .btn-open-popup:hover { background-color: rgba(0, 180, 216, 0.04);
+            box-shadow: 0 6px 15px rgba(0,180,216,0.1); }
+        .btn-open-popup.closet { background-color: #ffffff; color: #475569;
+            border: 1px solid #cbd5e1;}
+        .btn-open-popup.closet:hover { background-color: #f8fafc; border-color: #94a3b8;
+            color: #0f172a;}
+
+        /* 팝업 모달 스타일 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 30px;
+            border-radius: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        }
+        .modal-close {
+            position: absolute;
+            top: 20px; right: 20px;
+            background: none; border: none;
+            cursor: pointer; color: #94a3b8;
+        }
+
+        .form-group { margin-bottom: 18px; display: flex; flex-direction: column;
+        }
+        .form-group label { font-size: 0.85rem; color: #475569; margin-bottom: 8px; font-weight: 700;
+        }
+        .form-group input[type="text"], .form-group select {
+            padding: 12px;
+            background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.9rem; color: #1e293b; outline: none;
+        }
+        .form-group input[type="text"]:focus, .form-group select:focus {
+            border-color: #00b4d8;
+            background-color: #ffffff;
+        }
+
+        /* TPO 체크박스 배치 */
+        .checkbox-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: #1e293b;
+            cursor: pointer;
+            background-color: #f8fafc;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .checkbox-label input[type="checkbox"] {
+            margin: 0;
+        }
+        
+        .responsive-fade { animation: fadeIn 0.3s ease-in-out forwards;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px);
+        } to { opacity: 1; transform: translateY(0); } }
+
+        input[type="checkbox"] { accent-color: #00b4d8;
+            cursor: pointer; }
+        .btn-submit { background-color: #00b4d8; color: #ffffff; width: 100%; margin-top: 10px;
+        }
+
+        /* 필터 패널 인터페이스 */
+        .filter-section { background-color: #f8fafc;
+            padding: 18px; border-radius: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0;
+            position: relative;}
+        .filter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+        }
+        .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
+        }
+        .filter-row:last-child { margin-bottom: 0;
+        }
+        .filter-label { font-size: 0.8rem; font-weight: 700; color: #64748b; min-width: 50px;
+        }
+        .tab-btn {
+            padding: 6px 14px;
+            border-radius: 20px; font-size: 0.8rem; background-color: #ffffff; color: #64748b; border: 1px solid #e2e8f0; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .tab-btn.active { background-color: #00b4d8; color: #ffffff; border-color: #00b4d8;
+        }
+        .filter-select { padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0;
+            font-size: 0.8rem; background-color: #ffffff; color: #1e293b; outline: none; }
+
+        /* 데이터 백업 미니 레이어 */
+        .btn-mini-storage { background-color: #ffffff;
+            border: 1px solid #cbd5e1; color: #64748b; padding: 5px 10px; font-size: 0.75rem; border-radius: 8px;
+            font-weight: 600;}
+        .btn-mini-storage:hover { border-color: #00b4d8; color: #00b4d8;
+        }
+        .mini-storage-popover {
+            position: absolute;
+            top: 48px; right: 18px; background-color: #ffffff; border: 1px solid #e2e8f0;
+            border-radius: 12px; padding: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            display: none; z-index: 10; flex-direction: column; gap: 8px;
+        }
+        .btn-popover-action { padding: 6px 12px;
+            font-size: 0.75rem; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; width: 120px; cursor: pointer;
+            font-weight: 600;}
+        .btn-popover-action:hover { background-color: #00b4d8; color: #ffffff; border-color: #00b4d8;
+        }
+
+        /* 옷장 카드형 그리드 */
+        .batch-action-bar {
+            display: flex;
+            justify-content: space-between; align-items: center; background-color: #f1f5f9; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 0.85rem; border: 1px solid #e2e8f0;
+        }
+        .batch-btn-group { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;
+        }
+        .batch-btn-group button { padding: 6px 12px; font-size: 0.78rem; border-radius: 6px; font-weight: 600;
+        }
+        .btn-batch-towash { background-color: #fff3e0; color: #e65100; border: 1px solid #ffb74d;
+        }
+        .btn-batch-towash:hover { background-color: #ffe0b2;
+        }
+        .btn-batch-wash { background-color: #e0f7fa; color: #006064; border: 1px solid #4dd0e1;
+        }
+        .btn-batch-wash:hover { background-color: #b2ebf2;
+        }
+        .btn-batch-del { background-color: #ffebee; color: #c62828; border: 1px solid #ef5350;
+        }
+        .btn-batch-del:hover { background-color: #ffcdd2;
+        }
+
+        .closet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; list-style: none;
+            padding: 0; margin: 0; }
+        .closet-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; border-radius: 18px; padding: 12px; display: flex; flex-direction: column; align-items: center; position: relative; text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .select-checkbox { position: absolute; top: 12px;
+            left: 12px; width: 18px; height: 18px; cursor: pointer; z-index: 10; accent-color: #00b4d8;
+        }
+        .cloth-img { width: 100%; height: 115px; object-fit: contain; border-radius: 12px; background-color: #f8fafc;
+            margin-bottom: 10px; border: 1px solid #f1f5f9; }
+        .cloth-name { font-size: 0.85rem; font-weight: 600;
+            color: #0f172a; margin-bottom: 4px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .cloth-subtext { font-size: 0.72rem; color: #64748b; margin-bottom: 4px;
+        }
+        
+        .tag-container { display: flex;
+            gap: 4px; flex-wrap: wrap; justify-content: center; margin-top: 4px;}
+        .cloth-tag { font-size: 0.65rem;
+            padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+        .status-keep { background-color: #e0f7fa;
+            color: #00b4d8; }
+        .status-wash { background-color: #fff3e0; color: #ff9f43;
+        }
+        .tag-category-badge { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+        }
+        .tag-occasion-badge { background-color: #e2e8f0; color: #0f172a; font-size: 0.65rem; padding: 1px 4px;
+            border-radius: 4px;}
+        .no-img { display: flex; align-items: center; justify-content: center; color: #cbd5e1;
+        }
+        
+        .icon-svg { width: 20px;
+            height: 20px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none;
+        }
+        .icon-large { width: 44px; height: 44px; stroke: #cbd5e1;
+        }
+
+        /* ☁️ 상단 클라우드 데이터 전송 및 동기화 바 */
+        .sync-bar {
+            max-width: 1000px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 12px 20px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(148, 163, 184, 0.05);
+        }
+        .sync-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .sync-btn-group { display: flex; gap: 8px; }
+        .btn-sync-setup { background-color: #475569; color: white; padding: 8px 14px; font-size: 0.8rem; border-radius: 8px; font-weight: 600; }
+        .btn-sync-setup:hover { background-color: #334155; }
+        .cloud-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .badge-offline { background-color: #fee2e2; color: #ef4444; }
+        .badge-online { background-color: #dcfce7; color: #166534; }
+
+        /* 로딩 스피너 애니메이션 */
+        @keyframes spin { 0% { transform: rotate(0deg);
+        } 100% { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .main-container { flex-direction: column;
+            }
+            .side-panel { flex-direction: row;
+            }
+            .btn-open-popup { flex-direction: row; padding: 15px; font-size: 0.95rem;
+            }
+            .coordination-view { grid-template-columns: repeat(2, 1fr);
+            }
+            .coordination-slot { height: 160px;
+            }
+            .sync-bar { flex-direction: column; gap: 10px; text-align: center; }
+            .sync-info { align-items: center; }
+        }
+        /* ✅ v10: 토스트 알림 (alert 대체) */
+        .cloai-toast-wrap { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 10000;
+            display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: min(92vw, 420px); }
+        .cloai-toast { background: #0f172a; color: #f8fafc; padding: 12px 18px; border-radius: 12px; font-size: 0.85rem;
+            line-height: 1.5; white-space: pre-line; text-align: center; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+            opacity: 0; transform: translateY(8px); transition: opacity 0.2s, transform 0.2s; }
+        .cloai-toast.show { opacity: 1; transform: translateY(0); }
+
+        /* ✅ v10: 확인창 (confirm 대체) */
+        .cloai-confirm-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: flex;
+            align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
+        .cloai-confirm { background: #ffffff; color: #0f172a; border-radius: 18px; padding: 22px; width: min(340px, 100%);
+            font-size: 0.92rem; line-height: 1.6; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2); }
+        .cloai-confirm p { margin: 0 0 18px; white-space: pre-line; }
+        .cloai-confirm-actions { display: flex; gap: 8px; }
+        .cloai-confirm-actions > * { flex: 1; padding: 11px 0; border-radius: 10px; font-size: 0.9rem; font-weight: 700;
+            text-align: center; text-decoration: none; cursor: pointer; border: 1px solid #cbd5e1; background: #f1f5f9;
+            color: #334155; font-family: inherit; }
+        .cloai-confirm-actions .primary { background: #0f172a; color: #ffffff; border-color: #0f172a; }
+        .cloai-confirm-actions > *:focus-visible { outline: 2px solid #00b4d8; outline-offset: 2px; }
+
+        /* ✅ v11: 오늘의 날씨 */
+        .weather-panel { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; }
+        .weather-main { display: flex; align-items: center; gap: 12px; text-align: left; min-width: 0; }
+        .weather-icon { font-size: 2rem; line-height: 1; flex-shrink: 0; }
+        .weather-date { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+        .weather-summary { font-size: 1rem; color: #0f172a; font-weight: 800; margin-top: 2px; }
+        .weather-detail { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+        .weather-refresh { width: 36px; height: 36px; border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc;
+            color: #475569; font-size: 1.1rem; cursor: pointer; flex-shrink: 0; }
+        .weather-refresh:hover { border-color: #00b4d8; color: #00b4d8; }
+        .weather-refresh:focus-visible { outline: 2px solid #00b4d8; outline-offset: 2px; }
+        .codi-reason { width: 100%; text-align: left; background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #00b4d8;
+            padding: 16px; border-radius: 14px; font-size: 0.85rem; line-height: 1.6; color: #334155; margin-top: 10px; }
+        .codi-reason strong { color: #0f172a; }
+
+        /* ✅ v10: 실착 예시 버튼, 사진 미리보기 */
+        .btn-batch-gemini { background-color: #0f172a; color: #ffffff; border: 1px solid #0f172a; cursor: pointer; }
+        .btn-batch-gemini:hover { background-color: #1e293b; }
+        .btn-gemini-photo { width: 100%; margin-top: 10px; padding: 12px; border-radius: 12px; background: #ffffff;
+            border: 1px solid #0f172a; color: #0f172a; font-weight: 700; font-size: 0.88rem; cursor: pointer; font-family: inherit; }
+        .btn-gemini-photo:hover { background: #0f172a; color: #ffffff; }
+        .cloth-preview { display: none; margin-top: 10px; width: 120px; height: 120px; object-fit: contain; border-radius: 12px;
+            border: 1px solid #e2e8f0; background: repeating-conic-gradient(#f1f5f9 0 25%, #ffffff 0 50%) 0 0 / 16px 16px; }
+        .form-hint { font-size: 0.72rem; color: #94a3b8; margin: 4px 0 0; line-height: 1.5; }
+
+        @media (prefers-reduced-motion: reduce) { .cloai-toast { transition: none; } }
+    </style>
+</head>
+<body>
+
+<!-- 📱 [클라우드 실시간 동기화 정보 표시 바] -->
+<div class="sync-bar">
+    <div class="sync-info">
+        <span style="font-size: 0.85rem; font-weight: 700; color: #475569;">
+            ☁️ 실시간 클라우드 자동 저장소
+            <span id="cloudStatusBadge" class="cloud-badge badge-offline">임시 로컬 모드</span>
+        </span>
+        <div id="syncCodeText" class="sync-bar-desc" style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">
+            설정 버튼을 눌러 online 보안 데이터 저장소를 연결해 보세요.
+        </div>
+    </div>
+    <div class="sync-btn-group">
+        <button class="btn-sync-setup" onclick="openSyncSettings()">⚙️ 동기화 및 날씨 설정</button>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="hero-card">
+        <h2 style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 24px;">
+            <svg width="54" height="38" viewBox="0 0 60 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30 18C32.5 18 34.5 15.5 33.5 12.5C32.8 10.5 30.5 9 28.5 9.5C26 10 25 12.5 25 14.5" stroke="#00b4d8" stroke-width="3" stroke-linecap="round"/>
+                <path d="M10 28L26.5 19.5C28.7 18.4 31.3 18.4 33.5 19.5L50 28" stroke="#00b4d8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            
+                <path d="M14 28H46" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="30" cy="20" r="3" fill="#00b4d8"/>
+            </svg>
+            <span style="font-size: 1.8rem; font-weight: 800; letter-spacing: 1.5px; color: #0f172a;">
+                CLO<span style="color: #00b4d8; position: relative; top: -1px; margin: 0 1px;">:</span>AI
+            </span>
+        </h2>
+
+        <div id="weatherPanel" class="weather-panel" aria-live="polite">
+            <div class="weather-main">
+                <span id="weatherIcon" class="weather-icon">⏳</span>
+                <div>
+                    <div id="weatherDate" class="weather-date"></div>
+                    <div id="weatherSummary" class="weather-summary">날씨를 불러오는 중...</div>
+                    <div id="weatherDetail" class="weather-detail"></div>
+                </div>
+            </div>
+            <button class="weather-refresh" onclick="refreshWeather(true)" title="날씨 새로고침" aria-label="날씨 새로고침">↻</button>
+        </div>
+
+        <div class="occasion-container">
+            <button class="occasion-btn active" onclick="changeOccasion('출근길', this)">💼 출근길</button>
+            <button class="occasion-btn" onclick="changeOccasion('일상 생활', this)">☕ 일상 생활</button>
+            <button class="occasion-btn" onclick="changeOccasion('운동', this)">⚡ 운동</button>
+            <button class="occasion-btn" onclick="changeOccasion('데이트', this)">❤️ 데이트</button>
+        </div>
+
+        <div id="recommendBox" class="recommend-box">
+            <div id="defaultText" style="color: #64748b; line-height: 1.6; text-align: center;">
+                <svg class="icon-svg icon-large" style="margin-bottom:14px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <br>오늘 날씨에 맞는 코디를 준비하고 있어요.
+            </div>
+        </div>
+        
+        <button class="btn-recommend" onclick="recommendCodi()">다른 코디 추천받기</button>
+        <button id="btnWear" class="btn-wear" onclick="wearCodi()" disabled>오늘 이 코디 입기</button>
+    </div>
+
+    <div class="side-panel">
+        <button class="btn-open-popup" onclick="toggleModal('registerModal', true)">
+            <svg class="icon-svg" style="width:24px; height:24px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            옷장 추가
+        </button>
+        <button class="btn-open-popup closet" onclick="toggleModal('closetModal', true)">
+            <svg class="icon-svg" style="width:24px; height:24px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            나의 옷장
+        </button>
+    </div>
+</div>
+
+<!-- 옷 등록 모달 -->
+<div id="registerModal" class="modal-overlay" onclick="handleOverlayClick(event, 'registerModal')">
+    <div class="modal-content">
+        <button class="modal-close" onclick="toggleModal('registerModal', false)">
+            <svg class="icon-svg"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+     
+        <h2>새로운 아이템 등록</h2>
+        <div class="form-group">
+            <label>옷/아이템 이름</label>
+            <input type="text" id="clothName" placeholder="예: 무지 크루넥 티셔츠, 버뮤다 데님">
+        </div>
+        
+        <div class="form-group">
+            <label>대분류 카테고리 선택</label>
+            <select id="clothCategory" onchange="handleRegistrationCategoryChange()">
+                <option value="">-- 카테고리를 선택하세요 --</option>
+                <option value="상의">상의</option>
+                <option value="아우터">아우터</option>
+                <option value="하의">하의</option>
+                <option value="신발">신발</option>
+                <option value="악세사리">악세사리</option>
+            </select>
+        </div>
+
+        <div class="form-group responsive-fade" id="subCategoryFormGroup" style="display: none;">
+            <label id="subCategoryLabel">세부 카테고리 지정</label>
+            <select id="clothSubcategory" onchange="handleRegistrationSubcategoryChange()"></select>
+        </div>
+        
+        <div class="form-group">
+            <label>적당한 계절</label>
+            <select id="clothSeason">
+                <option value="사계절">사계절 (올시즌 가능)</option>
+                <option value="봄">봄 시즌</option>
+                <option value="여름">여름 시즌</option>
+                <option value="가을">가을 시즌</option>
+               <option value="겨울">겨울 시즌</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>착용 적합 상황 (TPO 중복 선택 가능)</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label"><input type="checkbox" name="clothOccasion" value="출근길"> 출근길</label>
+                <label class="checkbox-label"><input type="checkbox" name="clothOccasion" value="일상 생활"> 일상 생활</label>
+                <label class="checkbox-label"><input type="checkbox" name="clothOccasion" value="운동"> 운동</label>
+                <label class="checkbox-label"><input type="checkbox" name="clothOccasion" value="데이트"> 데이트</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>제품 사진 첨부</label>
+            <input type="file" id="clothImage" accept="image/*" style="color: #64748b;" onchange="handleClothImageSelect(this)">
+            <p class="form-hint">배경을 지운 PNG를 올리면 투명 배경 그대로 자동 압축돼요.</p>
+            <img id="clothPreview" class="cloth-preview" alt="">
+        </div>
+        <button class="btn-submit" onclick="addNewCloth()">옷장에 안전하게 보관</button>
+    </div>
+</div>
+
+<!-- 내 옷장 모달 -->
+<div id="closetModal" class="modal-overlay" onclick="handleOverlayClick(event, 'closetModal')">
+    <div class="modal-content" style="max-width: 650px;">
+        <button class="modal-close" onclick="toggleModal('closetModal', false)">
+            <svg class="icon-svg"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <h2>나의 스마트 옷장</h2>
+        
+        <div class="filter-section">
+            <div class="filter-header">
+                <h3>🔍 스마트 검색 필터</h3>
+                <button class="btn-mini-storage" onclick="toggleMiniStorage(event)">⚙️ 데이터 관리</button>
+                <div id="miniStoragePopover" class="mini-storage-popover">
+                    <button class="btn-popover-action" onclick="exportClosetData()">📥 일괄 백업</button>
+                    <button class="btn-popover-action" onclick="document.getElementById('importFileControl').click()">📤 일괄 복구</button>
+                    <button class="btn-popover-action" onclick="copyPromptFromSelection()">📋 실착 예시 프롬프트 복사</button>
+                    <input type="file" id="importFileControl" accept=".json" onchange="importClosetData(this)" style="display:none;">
+                </div>
+            </div>
+            
+
+            <div class="filter-row">
+                <span class="filter-label">분류:</span>
+                <button class="tab-btn active" onclick="filterCategory('전체', this)">전체</button>
+                <button class="tab-btn" onclick="filterCategory('상의', this)">상의</button>
+                <button class="tab-btn" onclick="filterCategory('아우터', this)">아우터</button>
+                <button class="tab-btn" onclick="filterCategory('하의', this)">하의</button>
+                <button class="tab-btn" onclick="filterCategory('신발', this)">신발</button>
+                <button class="tab-btn" onclick="filterCategory('악세사리', this)">악세사리</button>
+            </div>
+            
+            <div class="filter-row">
+                <span class="filter-label">세부:</span>
+                <select id="subFilter" class="filter-select" onchange="updateClosetUI()">
+                    <option value="전체">모든 세부 분류</option>
+                </select>
+
+                <span class="filter-label" style="margin-left: 15px;">계절:</span>
+                <select id="seasonFilter" class="filter-select" onchange="updateClosetUI()">
+                    <option value="전체">모든 계절</option>
+                    <option value="사계절">사계절 전용 제품</option>
+                    <option value="봄">봄 제품</option>
+                    <option value="여름">여름 제품</option>
+                    <option value="가을">가을 제품</option>
+                    <option value="겨울">겨울 제품</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="batch-action-bar">
+            <label style="display: flex; align-items: center; gap: 6px; color: #475569; font-weight: 600; font-size:0.82rem; cursor: pointer;">
+                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)">전체 선택
+            </label>
+            <div class="batch-btn-group">
+                <button class="btn-batch-towash" onclick="batchMoveToWash()">🧺 세탁함 전송</button>
+                <button class="btn-batch-wash" onclick="batchWashComplete()">☀️ 세탁완료 회수</button>
+                <button class="btn-batch-del" onclick="batchDelete()">🗑️ 영구 삭제</button>
+                <button class="btn-batch-gemini" onclick="openGeminiFromSelection()">👕 실착 예시</button>
+            </div>
+        </div>
+
+        <ul id="closetGrid" class="closet-grid"></ul>
+    </div>
+</div>
+
+<!-- ☁️ 동기화 및 DB 설정 팝업 모달 -->
+<div id="syncSettingsModal" class="modal-overlay" onclick="handleOverlayClick(event, 'syncSettingsModal')">
+    <div class="modal-content" style="max-width: 480px;">
+        <button class="modal-close" onclick="toggleModal('syncSettingsModal', false)">
+            <svg class="icon-svg"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <h2>⚙️ 동기화 및 날씨 설정</h2>
+        
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-size: 0.82rem; color: #475569; font-weight: bold; margin-bottom: 6px;">1. 나만의 옷장 동기화 코드 (기기간 공통)</label>
+            <input type="text" id="syncCodeInput" placeholder="예: my-closet-100">
+            <p class="form-hint">핸드폰과 PC에 똑같은 코드와 똑같은 파이어베이스 설정을 넣어야 옷장이 연동돼요. 이 코드를 아는 사람은 옷장을 볼 수 있으니 길고 추측하기 어렵게 정하세요.</p>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+            <label style="font-size: 0.82rem; color: #475569; font-weight: bold; margin-bottom: 6px;">2. 날씨 지역 (선택)</label>
+            <input type="text" id="weatherCityInput" placeholder="예: 서울, Busan">
+            <p class="form-hint">비워두면 기기의 현재 위치로 날씨를 불러와요. 위치 권한을 허용하지 않으면 서울 날씨를 씁니다.</p>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+            <label style="font-size: 0.82rem; color: #475569; font-weight: bold; margin-bottom: 6px;">3. 파이어베이스 클라우드 Config (JSON)</label>
+            <textarea id="firebaseConfigInput" placeholder='{"apiKey": "...", "authDomain": "...", ...}  (파이어베이스 콘솔의 firebaseConfig 코드를 그대로 붙여넣어도 돼요)' style="width: 100%; height: 100px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.75rem; font-family: monospace; resize: none;"></textarea>
+        </div>
+        
+        <button class="btn-submit" style="background-color: #0f172a;" onclick="saveAllSettings()">설정 저장</button>
+    </div>
+</div>
+
+<!-- 구글 클라우드 보안 데이터베이스 모듈 동적 로드 -->
+<script type="module">
+    // Firebase CDN 모듈 가져오기
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    // 전역으로 함수 연결을 위한 설정
+    window.openSyncSettings = openSyncSettings;
+    window.saveAllSettings = saveAllSettings;
+
+    // 환경 변수 검출
+    const envAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-cloai-app';
+
+    let db = null;
+    let auth = null;
+    let activeSyncCode = localStorage.getItem('cloai_sync_code') || '';
+    let isCloudActive = false;
+    let firestoreUnsubscribe = null;
+
+    // 로드 시 자동 부팅 시작
+    initSyncSystem();
+
+    // 동기화 시스템 부팅 함수
+    async function initSyncSystem() {
+        let configToUse = null;
+        const userSavedConfig = localStorage.getItem('cloai_user_firebase_config');
+        if (userSavedConfig) {
+            try {
+                configToUse = JSON.parse(userSavedConfig);
+            } catch(e) {
+                console.error("저장된 데이터베이스 JSON 설정 형식에 오류가 있습니다.");
+            }
+        }
+
+        // 동기화 코드 초기 검출
+        if (!activeSyncCode) {
+            // v10: 추측하기 어려운 12자리 코드로 생성
+            activeSyncCode = 'cloai-' + Array.from(crypto.getRandomValues(new Uint8Array(6)), b => b.toString(16).padStart(2, '0')).join('');
+            localStorage.setItem('cloai_sync_code', activeSyncCode);
+        }
+        document.getElementById('syncCodeInput').value = activeSyncCode;
+
+        // 파이어베이스 연결 시도
+        if (configToUse) {
+            try {
+                const app = initializeApp(configToUse);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // 익명 인증 수행
+                await signInAnonymously(auth);
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        isCloudActive = true;
+                        updateCloudStatusUI(true);
+                        subscribeToCloudCloset();
+                    } else {
+                        isCloudActive = false;
+                        updateCloudStatusUI(false);
+                    }
+                });
+            } catch (err) {
+                console.error("클라우드 연결 실패:", err);
+                isCloudActive = false;
+                updateCloudStatusUI(false);
+            }
+        } else {
+            isCloudActive = false;
+            updateCloudStatusUI(false);
+        }
+    }
+
+    // 클라우드에서 실시간 데이터 감시 및 로컬 동기화
+    function subscribeToCloudCloset() {
+        if (!db || !isCloudActive || !activeSyncCode) return;
+
+        if (firestoreUnsubscribe) {
+            firestoreUnsubscribe();
+        }
+
+        // RULE 1 규격 충족: /artifacts/{appId}/users/{userId}/{collectionName}
+        const collectionRef = collection(db, 'artifacts', envAppId, 'users', activeSyncCode, 'clothes');
+
+        // RULE 2 규격 충족: 정렬이나 추가 필터를 걸지 않고 전체 실시간 로드 후 메모리 매핑
+        let isFirstSnapshot = true;
+        firestoreUnsubscribe = onSnapshot(collectionRef, (snapshot) => {
+            const tempDB = [];
+            snapshot.forEach((d) => {
+                tempDB.push({ id: d.id, ...d.data() });
+            });
+
+            // v10: 이 기기에서 처음 연결될 때, 기기에만 있던 옷·사진을 클라우드에 합칠지 물어봅니다.
+            if (isFirstSnapshot) {
+                isFirstSnapshot = false;
+                const localCopy = (window.clothesDB || []).slice();
+                if (window.cloaiMergeLocalIntoCloud) window.cloaiMergeLocalIntoCloud(localCopy, tempDB, activeSyncCode);
+            }
+
+            if (tempDB.length > 0) {
+                window.clothesDB = tempDB;
+                window.saveToStorageOnlyLocal(); // 임시 로컬 캐싱
+                window.updateClosetUI();
+                if (window.onClosetDataChanged) window.onClosetDataChanged(); // v11: 오늘의 코디 갱신
+            }
+        }, (error) => {
+            console.error("실시간 수신 에러:", error);
+        });
+    }
+
+    // 클라우드 상태 바 UI 업데이트
+    function updateCloudStatusUI(online) {
+        const badge = document.getElementById('cloudStatusBadge');
+        const desc = document.getElementById('syncCodeText');
+        
+        if (online) {
+            badge.className = "cloud-badge badge-online";
+            badge.textContent = "클라우드 동기화 완료";
+            desc.innerHTML = `현재 동기화 코드: <strong style="color: #0f172a; text-decoration: underline;">${activeSyncCode}</strong> (실시간 데이터 연동 중)`;
+        } else {
+            badge.className = "cloud-badge badge-offline";
+            badge.textContent = "임시 로컬 모드";
+            desc.innerHTML = `설정에서 동기화 코드와 파이어베이스를 등록하면 기기끼리 옷장이 연동돼요.`;
+        }
+    }
+
+    // 동기화 설정 팝업 열기
+    function openSyncSettings() {
+        document.getElementById('firebaseConfigInput').value = localStorage.getItem('cloai_user_firebase_config') || '';
+        document.getElementById('weatherCityInput').value = localStorage.getItem('cloai_weather_city') || '';
+        document.getElementById('syncCodeInput').value = activeSyncCode;
+        window.toggleModal('syncSettingsModal', true);
+    }
+
+    // 모든 보안 및 연결 설정 저장
+    function saveAllSettings() {
+        const code = document.getElementById('syncCodeInput').value.trim();
+        const weatherCity = document.getElementById('weatherCityInput').value.trim();
+        const firebaseStr = document.getElementById('firebaseConfigInput').value.trim();
+
+        if (!code || /\s/.test(code)) return window.showToast("동기화 코드를 공백 없이 적어주세요.");
+        
+        // 1. 동기화 코드 저장
+        activeSyncCode = code;
+        localStorage.setItem('cloai_sync_code', code);
+
+        // 2. 날씨 지역 저장 (더 이상 쓰지 않는 제미나이 키는 정리)
+        localStorage.removeItem('cloai_gemini_api_key');
+        if (weatherCity) localStorage.setItem('cloai_weather_city', weatherCity);
+        else localStorage.removeItem('cloai_weather_city');
+        localStorage.removeItem('cloai_weather_cache');
+
+        // 3. 파이어베이스 저장
+        if (!firebaseStr) {
+            localStorage.removeItem('cloai_user_firebase_config');
+        } else {
+            try {
+                const parsed = parseFirebaseConfig(firebaseStr);
+                if (!parsed.apiKey || !parsed.projectId) throw new Error('필수 항목 누락');
+                localStorage.setItem('cloai_user_firebase_config', JSON.stringify(parsed));
+            } catch(e) {
+                return window.showToast("파이어베이스 설정을 읽지 못했어요.\napiKey와 projectId가 들어 있는지 확인해 주세요.");
+            }
+        }
+
+        window.showToast("설정을 저장했어요. 새 설정으로 다시 연결합니다.");
+        window.toggleModal('syncSettingsModal', false);
+        // Firebase는 한 페이지에서 두 번 초기화할 수 없어서, 새로고침으로 다시 연결합니다.
+        setTimeout(() => location.reload(), 900);
+    }
+
+    // v10: JSON뿐 아니라 콘솔의 "const firebaseConfig = { apiKey: ... }" 코드도 받아들입니다.
+    function parseFirebaseConfig(str) {
+        try { return JSON.parse(str); } catch (e) { /* 아래에서 다시 시도 */ }
+        const m = str.match(/\{[\s\S]*\}/);
+        if (!m) throw new Error('설정 객체 없음');
+        const jsonish = m[0]
+            .replace(/([{,]\s*)([A-Za-z_$][\w$]*)\s*:/g, '$1"$2":')
+            .replace(/'/g, '"')
+            .replace(/,\s*}/g, '}');
+        return JSON.parse(jsonish);
+    }
+
+    // 외부로 파이어베이스 저장 동작 제공을 위한 인터페이스화
+    // v10: Firestore 문서 1개 한도(1MiB)에 여유를 두고 900KB로 제한합니다.
+    const CLOAI_DOC_SIZE_LIMIT = 900 * 1024;
+
+    window.isCloudOnline = () => !!db && isCloudActive;
+
+    function clothDocRef(id) {
+        return doc(db, 'artifacts', envAppId, 'users', activeSyncCode, 'clothes', String(id));
+    }
+
+    // options.merge: 기존 문서에 합치기 / options.silent: 실패 알림 생략
+    window.cloudSaveNewItem = async function(newItem, options = {}) {
+        if (!db || !isCloudActive) return false;
+        const data = Object.fromEntries(Object.entries(newItem).filter(([, v]) => v !== undefined));
+        const approx = JSON.stringify(data).length;
+        if (approx > CLOAI_DOC_SIZE_LIMIT) {
+            console.error("문서 용량 초과:", approx, newItem.name);
+            if (!options.silent) window.showToast(`사진 용량이 너무 커서 클라우드에 저장할 수 없어요 (${Math.round(approx / 1024)}KB).`);
+            return false;
+        }
+        try {
+            await setDoc(clothDocRef(newItem.id), data, { merge: !!options.merge });
+            return true;
+        } catch(e) {
+            console.error("클라우드 쓰기 오류:", e);
+            if (!options.silent) window.showToast("클라우드 저장에 실패했어요: " + (e.code || e.message));
+            return false;
+        }
+    };
+
+    window.cloudUpdateItemStatus = async function(id, newStatus) {
+        if (!db || !isCloudActive) return false;
+        try {
+            await updateDoc(clothDocRef(id), { status: newStatus });
+            return true;
+        } catch(e) {
+            console.error("클라우드 상태수정 오류:", e);
+            window.showToast("클라우드 상태 변경에 실패했어요: " + (e.code || e.message));
+            return false;
+        }
+    };
+
+    window.cloudDeleteItem = async function(id) {
+        if (!db || !isCloudActive) return false;
+        try {
+            await deleteDoc(clothDocRef(id));
+            return true;
+        } catch(e) {
+            console.error("클라우드 삭제 오류:", e);
+            window.showToast("클라우드 삭제에 실패했어요: " + (e.code || e.message));
+            return false;
+        }
+    };
+</script>
+
+<script>
+    let defaultClothes = [
+        {id: 10001, name: "기본 크루넥 맨투맨", categories: ["상의"], subcategory: "맨투맨/스웨트", season: "사계절", occasions: ["일상 생활", "데이트"], status: "보관중", img: ""},
+        {id: 10002, name: "클래식 흑청 데님", categories: ["하의"], subcategory: "청바지", season: "사계절", occasions: ["출근길", "일상 생활", "데이트"], status: "보관중", img: ""},
+        {id: 10003, name: "화이트 데일리 스니커즈", categories: ["신발"], subcategory: "스니커즈/운동화", season: "사계절", occasions: ["출근길", "일상 생활", "운동", "데이트"], status: "보관중", img: ""}
+    ];
+
+    let rawData = JSON.parse(localStorage.getItem('clothesDB_v9')) || defaultClothes;
+    window.clothesDB = rawData.map(item => {
+        if (!item.id) item.id = Date.now() + Math.floor(Math.random() * 100);
+        if (item.category && !item.categories) { item.categories = [item.category]; delete item.category; }
+        if (item.categories && item.categories.includes('겉옷')) item.categories = item.categories.map(c => c === '겉옷' ? '아우터' : c);
+        if (!item.subcategory) item.subcategory = "선택 안함";
+        if (!item.occasions) item.occasions = ["출근길", "일상 생활"];
+        return item;
+    });
+
+    const subcategoryMap = {
+        "상의": ["티셔츠/민소매", "맨투맨/스웨트", "셔츠/블라우스", "후드티셔츠", "니트/스웨터", "가디건"],
+        "아우터": ["후드집업", "블루종", "라이더 자켓", "슈트", "블레이저 자켓", "패딩", "아노락", "플리스", "코트", "바람막이/자켓"],
+        "하의": ["청바지", "슬랙스/와이드팬츠", "트레이닝 팬츠", "조거 팬츠", "반바지/버뮤다"],
+        "신발": ["스니커즈/운동화", "구두", "부츠", "슬리퍼/샌들"],
+        "악세사리": ["모자", "가방", "벨트", "기타 악세사리"]
+    };
+
+    const autoOccasionMap = {
+        "티셔츠/민소매": ["일상 생활", "운동"],
+        "맨투맨/스웨트": ["일상 생활"],
+        "셔츠/블라우스": ["출근길", "데이트"],
+        "니트/스웨터": ["출근길", "일상 생활", "데이트"],
+        "가디건": ["일상 생활", "데이트"],
+        "라이더 자켓": ["데이트", "일상 생활"],
+        "블레이저 자켓": ["출근길", "데이트"],
+        "청바지": ["일상 생활", "데이트"],
+        "슬랙스/와이드팬츠": ["출근길", "일상 생활", "데이트"],
+        "트레이닝 팬츠": ["운동", "일상 생활"],
+        "스니커즈/운동화": ["출근길", "일상 생활", "운동", "데이트"],
+        "구두": ["출근길", "데이트"],
+        "부츠": ["데이트"]
+    };
+
+    let currentTop = null;
+    let currentBottom = null;
+    let currentShoes = null;
+    let selectedCategory = "전체";
+    let currentOccasion = "출근길";
+
+    // 동기화 모듈에서도 접근할 수 있도록 로컬 전용 저장소 저장 함수 노출
+    let cloaiQuotaWarned = false;
+    window.saveToStorageOnlyLocal = function() {
+        try {
+            localStorage.setItem('clothesDB_v9', JSON.stringify(window.clothesDB));
+        } catch (e) {
+            // v10: 브라우저 저장 공간(약 5MB)이 가득 차면 사진을 빼고 저장합니다. (클라우드에는 사진이 남아 있음)
+            try {
+                localStorage.setItem('clothesDB_v9', JSON.stringify(window.clothesDB.map(({ img, ...rest }) => rest)));
+            } catch (e2) { console.error('로컬 저장 실패:', e2); }
+            if (!cloaiQuotaWarned) {
+                cloaiQuotaWarned = true;
+                window.showToast(window.isCloudOnline && window.isCloudOnline()
+                    ? '기기 저장 공간이 부족해서 사진은 클라우드에서만 불러와요.'
+                    : '기기 저장 공간이 가득 찼어요.\n클라우드를 연결하면 사진을 계속 저장할 수 있어요.');
+            }
+        }
+    };
+
+    function saveToStorage() { 
+        window.saveToStorageOnlyLocal();
+    }
+    
+    function toggleMiniStorage(e) { 
+        e.stopPropagation();
+        const pop = document.getElementById('miniStoragePopover'); 
+        pop.style.display = pop.style.display === 'flex' ? 'none' : 'flex';
+    }
+    
+    document.addEventListener('click', () => { 
+        const pop = document.getElementById('miniStoragePopover');
+        if(pop) pop.style.display = 'none'; 
+    });
+    
+    function exportClosetData() {
+        if(window.clothesDB.length === 0) return window.showToast('백업할 옷 데이터가 없습니다.');
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.clothesDB));
+        const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "cloai_tpo_backup.json");
+        document.body.appendChild(dl); dl.click(); dl.remove(); window.showToast('백업 파일을 저장했어요.');
+    }
+
+    function importClosetData(inputElement) {
+        const file = inputElement.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                let importedData = JSON.parse(e.target.result);
+                if (!Array.isArray(importedData)) throw new Error('배열 아님');
+                importedData = importedData.map((item, i) => ({
+                    ...item,
+                    id: item.id ?? (Date.now() + i),
+                    categories: item.categories || (item.category ? [item.category] : ['상의']),
+                    subcategory: item.subcategory || '선택 안함',
+                    occasions: item.occasions || ['출근길', '일상 생활'],
+                }));
+                const ok = await window.showConfirm(`총 ${importedData.length}개의 데이터를 복구할까요?`, '복구');
+                if (ok) {
+                    if (window.isCloudOnline && window.isCloudOnline()) {
+                        const { done, failed } = await cloaiUploadItems(importedData);
+                        window.showToast(failed ? `${done}개 복구, ${failed}개 실패 (F12 콘솔 확인)` : `${done}개를 클라우드 옷장에 복구했어요.`, 4000, 'upload-progress');
+                    } else {
+                        window.clothesDB = importedData;
+                        saveToStorage(); updateSubFilterOptions(selectedCategory); updateClosetUI();
+                        window.showToast('이 기기에 복구했어요. (임시 로컬 모드)');
+                    }
+                }
+            } catch (err) { console.error(err); window.showToast('파일이 올바르지 않습니다.'); }
+            inputElement.value = "";
+        };
+        reader.readAsText(file);
+    }
+
+    function toggleModal(modalId, show) {
+        const modal = document.getElementById(modalId);
+        if(modal) modal.style.display = show ? 'flex' : 'none';
+        if (show && modalId === 'closetModal') { updateSubFilterOptions(selectedCategory); updateClosetUI(); }
+        if (!show && modalId === 'registerModal') {
+            document.getElementById('clothCategory').value = "";
+            document.getElementById('subCategoryFormGroup').style.display = 'none';
+            document.querySelectorAll('input[name="clothOccasion"]').forEach(cb => cb.checked = false);
+            // v10: 사진 선택 상태 초기화
+            window.pendingClothImage = null;
+            document.getElementById('clothImage').value = '';
+            const preview = document.getElementById('clothPreview');
+            if (preview) { preview.style.display = 'none'; preview.removeAttribute('src'); }
+        }
+    }
+
+    function handleOverlayClick(e, modalId) { if(e.target.classList.contains('modal-overlay')) toggleModal(modalId, false); }
+
+    function handleRegistrationCategoryChange() {
+        const categorySelect = document.getElementById('clothCategory');
+        const subGroup = document.getElementById('subCategoryFormGroup');
+        const subSelect = document.getElementById('clothSubcategory'); const selected = categorySelect.value;
+        if (!selected) { subGroup.style.display = 'none'; return; }
+        subSelect.innerHTML = ''; const options = subcategoryMap[selected] || [];
+        options.forEach(optText => { const opt = document.createElement('option'); opt.value = optText; opt.textContent = optText; subSelect.appendChild(opt); });
+        subGroup.style.display = 'flex'; handleRegistrationSubcategoryChange();
+    }
+
+    function handleRegistrationSubcategoryChange() {
+        const subSelect = document.getElementById('clothSubcategory');
+        const selectedSub = subSelect.value;
+        const defaultOccasions = autoOccasionMap[selectedSub] || ["일상 생활"];
+        document.querySelectorAll('input[name="clothOccasion"]').forEach(cb => { cb.checked = defaultOccasions.includes(cb.value); });
+    }
+
+    async function addNewCloth() {
+        const nameInput = document.getElementById('clothName');
+        const categorySelect = document.getElementById('clothCategory');
+        const subSelect = document.getElementById('clothSubcategory'); const seasonInput = document.getElementById('clothSeason');
+        const fileInput = document.getElementById('clothImage');
+        const checkedOccasions = Array.from(document.querySelectorAll('input[name="clothOccasion"]:checked')).map(cb => cb.value);
+        if (!nameInput.value.trim()) return window.showToast('이름을 입력해 주세요.');
+        if (!categorySelect.value) return window.showToast('대분류 카테고리를 지정해 주세요.');
+        if (checkedOccasions.length === 0) return window.showToast('착용 상황(TPO) 태그를 하나 이상 선택해 주세요.');
+
+        const submitBtn = document.querySelector('#registerModal .btn-submit');
+        if (submitBtn.disabled) return;
+        submitBtn.disabled = true;
+        try {
+            // v10: 사진은 압축본(투명 배경 유지 WebP/PNG, 약 250KB 이하)으로 저장
+            let imgData = window.pendingClothImage || '';
+            const file = fileInput.files[0];
+            if (!imgData && file) {
+                try { imgData = await window.compressClothImage(file); }
+                catch (e) { console.error(e); return window.showToast('사진을 읽지 못했어요. PNG, JPG, WebP 파일로 다시 시도해 주세요.'); }
+            }
+
+            const newCloth = { id: Date.now(), name: nameInput.value.trim(), categories: [categorySelect.value], subcategory: subSelect.value || "일반", season: seasonInput.value, occasions: checkedOccasions, status: "보관중", img: imgData };
+            const online = window.isCloudOnline && window.isCloudOnline();
+
+            // 클라우드 먼저 저장 → 성공해야 화면에 추가 (실패 사유는 cloudSaveNewItem이 알려줌)
+            if (online) {
+                const ok = await window.cloudSaveNewItem(newCloth);
+                if (!ok) return;
+            }
+            if (!window.clothesDB.some(c => String(c.id) === String(newCloth.id))) window.clothesDB.push(newCloth);
+            saveToStorage();
+            updateClosetUI();
+
+            nameInput.value = "";
+            categorySelect.value = ""; document.getElementById('subCategoryFormGroup').style.display = 'none';
+            toggleModal('registerModal', false);
+            window.showToast(online ? `'${newCloth.name}'을(를) 옷장에 등록했어요.` : `'${newCloth.name}'을(를) 이 기기에 등록했어요. (임시 로컬 모드)`);
+        } finally {
+            submitBtn.disabled = false;
+        }
+    }
+
+    function updateSubFilterOptions(category) {
+        const subFilter = document.getElementById('subFilter');
+        subFilter.innerHTML = '<option value="전체">모든 세부 분류</option>';
+        let subs = []; if (category === "전체") { Object.values(subcategoryMap).forEach(arr => subs.push(...arr));
+        } else { subs = subcategoryMap[category] || []; }
+        subs.forEach(sub => { const opt = document.createElement('option'); opt.value = sub; opt.textContent = sub; subFilter.appendChild(opt); });
+    }
+
+    function filterCategory(category, btnElement) {
+        selectedCategory = category;
+        const tabs = document.querySelectorAll('.tab-btn'); tabs.forEach(t => t.classList.remove('active'));
+        btnElement.classList.add('active'); updateSubFilterOptions(category); updateClosetUI();
+    }
+
+    function toggleSelectAll(masterCheckbox) { const itemCheckboxes = document.querySelectorAll('.select-checkbox'); itemCheckboxes.forEach(cb => cb.checked = masterCheckbox.checked); }
+
+    function updateClosetUI() {
+        const gridEl = document.getElementById('closetGrid');
+        if(!gridEl) return;
+        gridEl.innerHTML = '';
+        const selectedSub = document.getElementById('subFilter').value; const selectedSeason = document.getElementById('seasonFilter').value;
+        document.getElementById('selectAllCheckbox').checked = false;
+        const filteredDB = window.clothesDB.map((item, originalIndex) => ({...item, originalIndex}))
+            .filter(item => {
+                const matchCat = (selectedCategory === "전체" || item.categories.includes(selectedCategory));
+                const matchSub = (selectedSub === "전체" || item.subcategory === selectedSub);
+                let matchSea = (selectedSeason === "전체" || selectedSeason === "사계절" ? (selectedSeason === "전체" || 
+                item.season === "사계절") : (item.season === selectedSeason || item.season === "사계절"));
+                return matchCat && matchSub && matchSea;
+            });
+        if(filteredDB.length === 0) { gridEl.innerHTML = "<p style='color:#94a3b8; text-align:center; grid-column:1/-1; padding:40px 0;'>해당 조건의 아이템이 존재하지 않습니다.</p>"; return; }
+        filteredDB.forEach(item => {
+            const li = document.createElement('li'); li.className = 'closet-card';
+            const imgTag = item.img ? `<img src="${item.img}" class="cloth-img" alt="" loading="lazy">` : `<div class="cloth-img no-img"><svg class="icon-svg icon-large"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`;
+            li.innerHTML = `
+                <input type="checkbox" class="select-checkbox" data-index="${item.originalIndex}">
+                ${imgTag}
+                <div class="cloth-name">${item.name}</div>
+                <div class="cloth-subtext">${item.subcategory} (${item.season})</div>
+                <div class="tag-container">
+                    <span class="cloth-tag ${item.status === '보관중' ? 'status-keep' : 'status-wash'}">${item.status}</span>
+                    <span class="cloth-tag tag-category-badge">${item.categories[0]}</span>
+                    ${item.occasions.map(o => `<span class="cloth-tag tag-occasion-badge">${o}</span>`).join('')}
+                </div>
+            `;
+            gridEl.appendChild(li);
+        });
+    }
+
+    window.updateClosetUI = updateClosetUI;
+
+    function getSelectedOriginalIndices() { return Array.from(document.querySelectorAll('.select-checkbox:checked')).map(cb => parseInt(cb.getAttribute('data-index'))); }
+    
+    // v10: 선택한 옷 상태 일괄 변경 (클라우드 먼저 → 성공 시 화면 갱신)
+    async function cloaiBatchSetStatus(newStatus, doneMessage) {
+        const idxs = getSelectedOriginalIndices();
+        if (idxs.length === 0) return window.showToast('선택된 아이템이 없습니다.');
+        const targets = idxs.map(i => window.clothesDB[i]).filter(Boolean);
+
+        if (window.isCloudOnline && window.isCloudOnline()) {
+            const results = await Promise.all(targets.map(t => window.cloudUpdateItemStatus(t.id, newStatus)));
+            if (results.includes(false)) return; // 실패 안내는 cloudUpdateItemStatus가 표시
+        }
+        const ids = new Set(targets.map(t => String(t.id)));
+        window.clothesDB.forEach(c => { if (ids.has(String(c.id))) c.status = newStatus; });
+        saveToStorage(); updateClosetUI();
+        window.showToast(doneMessage(targets.length));
+    }
+
+    async function batchMoveToWash() { return cloaiBatchSetStatus('세탁중', n => `${n}개를 세탁함으로 보냈어요.`); }
+    async function batchWashComplete() { return cloaiBatchSetStatus('보관중', n => `${n}개를 옷장으로 회수했어요.`); }
+
+    async function batchDelete() {
+        const idxs = getSelectedOriginalIndices();
+        if (idxs.length === 0) return window.showToast('선택된 아이템이 없습니다.');
+        const ok = await window.showConfirm(`선택한 ${idxs.length}개 아이템을 옷장에서 완전히 제거할까요?`, '삭제');
+        if (!ok) return;
+
+        const targets = idxs.map(i => window.clothesDB[i]).filter(Boolean);
+        // 클라우드 먼저 삭제 → 실패하면 화면은 그대로 둬서 데이터가 어긋나지 않게 합니다.
+        if (window.isCloudOnline && window.isCloudOnline()) {
+            const results = await Promise.all(targets.map(item => window.cloudDeleteItem(item.id)));
+            if (results.includes(false)) return;
+        }
+        const deletedIds = new Set(targets.map(t => String(t.id)));
+        window.clothesDB = window.clothesDB.filter(c => !deletedIds.has(String(c.id)));
+        saveToStorage();
+        updateSubFilterOptions(selectedCategory);
+        updateClosetUI();
+        window.showToast(`${targets.length}개 아이템을 삭제했어요.`);
+    }
+
+    /* ==================================================================
+     * ✅ v10 공통 도구: 알림, 확인창, 사진 압축, 클라우드 합치기, 실착 예시
+     * ================================================================== */
+
+    const CLOAI_IMG_MAX_SIDE = 800;                       // 사진 긴 변 최대 px
+    const CLOAI_IMG_TARGET_CHARS = 250 * 1024;            // 압축 목표 용량 (약 250KB)
+    const CLOAI_SLOT_ORDER = ['아우터', '상의', '하의', '신발', '악세사리'];
+    const CLOAI_SAMPLE_IDS = new Set(['10001', '10002', '10003']); // 기본 예시 옷
+
+    /* ---------- 알림 (alert 대체) ----------
+     * key를 주면 같은 key의 알림 내용을 바꿔서 보여줍니다. (진행률 표시용) */
+    window.showToast = function (message, duration = 2800, key = '') {
+        let wrap = document.querySelector('.cloai-toast-wrap');
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.className = 'cloai-toast-wrap';
+            wrap.setAttribute('role', 'status');
+            wrap.setAttribute('aria-live', 'polite');
+            document.body.appendChild(wrap);
+        }
+        let toast = Array.from(wrap.children).find(el => (key && el.dataset.key === key) || el.textContent === message);
+        if (toast) {
+            clearTimeout(toast._timer);
+            toast.textContent = message;
+        } else {
+            while (wrap.children.length >= 3) wrap.firstElementChild.remove();
+            toast = document.createElement('div');
+            toast.className = 'cloai-toast';
+            if (key) toast.dataset.key = key;
+            toast.textContent = message;
+            wrap.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+        }
+        toast._timer = setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 250);
+        }, duration);
+    };
+
+    /* ---------- 확인창 (confirm 대체) ----------
+     * 사용법: if (await showConfirm('정말 삭제할까요?', '삭제')) { ... } */
+    function cloaiDialog(message, actions) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'cloai-confirm-overlay';
+            const box = document.createElement('div');
+            box.className = 'cloai-confirm';
+            box.setAttribute('role', 'dialog');
+            box.setAttribute('aria-modal', 'true');
+            const p = document.createElement('p');
+            p.textContent = message;
+            const row = document.createElement('div');
+            row.className = 'cloai-confirm-actions';
+
+            const onKey = (e) => { if (e.key === 'Escape') close(false); };
+            const close = (value) => {
+                overlay.remove();
+                document.removeEventListener('keydown', onKey);
+                resolve(value);
+            };
+            actions.forEach((a) => {
+                const el = document.createElement(a.href ? 'a' : 'button');
+                el.textContent = a.label;
+                if (a.primary) el.classList.add('primary');
+                if (a.href) { el.href = a.href; el.target = '_blank'; el.rel = 'noopener'; }
+                el.addEventListener('click', () => close(a.value));
+                row.appendChild(el);
+            });
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+            document.addEventListener('keydown', onKey);
+            box.append(p, row);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+            row.lastElementChild.focus();
+        });
+    }
+
+    window.showConfirm = (message, okLabel = '확인') => cloaiDialog(message, [
+        { label: '취소', value: false },
+        { label: okLabel, value: true, primary: true },
+    ]);
+
+    /* ---------- 사진 압축: 투명 배경(누끼) 유지 ----------
+     * Chrome/Edge/Firefox는 WebP, WebP 저장을 못 하는 브라우저는 PNG로 저장합니다. */
+    async function cloaiLoadBitmap(source) {
+        const blob = typeof source === 'string' ? await (await fetch(source)).blob() : source;
+        return await createImageBitmap(blob);
+    }
+
+    function cloaiRender(bitmap, maxSide, type, quality) {
+        const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+        const w = Math.max(1, Math.round(bitmap.width * scale));
+        const h = Math.max(1, Math.round(bitmap.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+        return canvas.toDataURL(type, quality);
+    }
+
+    window.compressClothImage = async function (source) {
+        const bitmap = await cloaiLoadBitmap(source);
+        try {
+            const probe = cloaiRender(bitmap, 8, 'image/webp', 0.8);
+            const type = probe.startsWith('data:image/webp') ? 'image/webp' : 'image/png';
+            let side = CLOAI_IMG_MAX_SIDE;
+            let quality = 0.82;
+            let out = cloaiRender(bitmap, side, type, quality);
+            // 목표 용량보다 크면 화질 → 크기 순서로 줄입니다.
+            while (out.length > CLOAI_IMG_TARGET_CHARS && side > 240) {
+                if (type === 'image/webp' && quality > 0.55) quality -= 0.1;
+                else side = Math.round(side * 0.8);
+                out = cloaiRender(bitmap, side, type, quality);
+            }
+            return out;
+        } finally {
+            if (bitmap.close) bitmap.close();
+        }
+    };
+
+    // 이미 작은 사진은 그대로, 큰 사진만 압축
+    async function cloaiPrepareImg(img) {
+        if (typeof img !== 'string' || !img.startsWith('data:image')) return img || '';
+        if (img.length <= CLOAI_IMG_TARGET_CHARS) return img;
+        return await window.compressClothImage(img);
+    }
+
+    /* ---------- 옷 등록 폼: 사진 선택 즉시 압축 + 미리보기 ---------- */
+    window.pendingClothImage = null;
+
+    window.handleClothImageSelect = async function (inputEl) {
+        const preview = document.getElementById('clothPreview');
+        window.pendingClothImage = null;
+        if (preview) { preview.style.display = 'none'; preview.removeAttribute('src'); }
+
+        const file = inputEl.files && inputEl.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            window.showToast('이미지 파일만 올릴 수 있어요.');
+            inputEl.value = '';
+            return;
+        }
+        try {
+            const data = await window.compressClothImage(file);
+            if (inputEl.files[0] !== file) return; // 압축 중에 다른 파일을 고른 경우
+            window.pendingClothImage = data;
+            if (preview) { preview.src = data; preview.style.display = 'block'; }
+            window.showToast(`사진 준비 완료 (${Math.round(data.length / 1024)}KB)`);
+        } catch (e) {
+            console.error(e);
+            window.showToast('사진을 읽지 못했어요. PNG, JPG, WebP 파일로 다시 시도해 주세요.');
+        }
+    };
+
+    /* ---------- 클라우드 업로드 (사진 압축 포함) ---------- */
+    async function cloaiUploadItems(items) {
+        let done = 0;
+        let failed = 0;
+        for (const item of items) {
+            try {
+                const img = await cloaiPrepareImg(item.img);
+                const ok = await window.cloudSaveNewItem({ ...item, img }, { merge: true, silent: true });
+                if (ok) done++; else failed++;
+            } catch (e) {
+                console.error('업로드 실패:', item, e);
+                failed++;
+            }
+            window.showToast(`클라우드에 올리는 중... ${done + failed}/${items.length}`, 4000, 'upload-progress');
+        }
+        return { done, failed };
+    }
+
+    /* ---------- 처음 클라우드에 연결될 때: 이 기기에만 있던 옷·사진 합치기 ----------
+     * Firebase 모듈의 실시간 수신(onSnapshot) 첫 회에 자동으로 호출됩니다. */
+    window.cloaiMergeLocalIntoCloud = async function (localItems, cloudItems, syncCode) {
+        const flagKey = 'cloai_v10_merged_' + syncCode;
+        if (localStorage.getItem(flagKey)) return;
+
+        const cloudById = new Map(cloudItems.map(c => [String(c.id), c]));
+        const candidates = localItems.filter(item => {
+            if (!item || item.id == null) return false;
+            const id = String(item.id);
+            if (CLOAI_SAMPLE_IDS.has(id) && !item.img) return false;  // 기본 예시 옷은 제외
+            const inCloud = cloudById.get(id);
+            if (!inCloud) return true;                                // 이 기기에만 있는 옷
+            return !!item.img && !inCloud.img;                        // 클라우드에 사진만 빠진 옷
+        });
+        if (candidates.length === 0) { localStorage.setItem(flagKey, '1'); return; }
+
+        const ok = await window.showConfirm(
+            `이 기기에만 있던 옷(또는 사진) ${candidates.length}개를 클라우드 옷장에 합칠까요?\n합치지 않으면 이 기기 옷장은 클라우드 옷장으로 바뀌어요.`,
+            '합치기'
+        );
+        if (!ok) return; // 다음에 열 때 다시 물어봅니다.
+
+        const payload = candidates.map(item =>
+            cloudById.has(String(item.id)) ? { id: item.id, img: item.img } : item
+        );
+        const { done, failed } = await cloaiUploadItems(payload);
+        if (failed === 0) localStorage.setItem(flagKey, '1');
+        window.showToast(
+            failed ? `${done}개 합침, ${failed}개 실패 (F12 콘솔 확인)` : `${done}개를 클라우드 옷장에 합쳤어요.`,
+            4000, 'upload-progress'
+        );
+    };
+
+    /* ---------- 실착 예시: 사진 콜라주 복사 + 프롬프트 채운 Gemini 열기 ---------- */
+    function cloaiSlotOf(item) {
+        const cats = item.categories || [];
+        return CLOAI_SLOT_ORDER.find(s => cats.includes(s)) || cats[0] || '아이템';
+    }
+
+    function cloaiSortBySlot(items) {
+        const rank = (it) => {
+            const i = CLOAI_SLOT_ORDER.indexOf(cloaiSlotOf(it));
+            return i === -1 ? 99 : i;
+        };
+        return [...items].sort((a, b) => rank(a) - rank(b));
+    }
+
+    async function cloaiBuildCollageBlob(items) {
+        const tile = 512, gap = 24, pad = 32, labelH = 56;
+        const W = pad * 2 + items.length * tile + (items.length - 1) * gap;
+        const H = pad * 2 + tile + labelH;
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, W, H);
+
+        for (let i = 0; i < items.length; i++) {
+            const x = pad + i * (tile + gap);
+            const y = pad;
+            ctx.fillStyle = '#f3f4f6';
+            ctx.fillRect(x, y, tile, tile);
+            if (items[i].img) {
+                const bmp = await cloaiLoadBitmap(items[i].img);
+                const s = Math.min((tile - 32) / bmp.width, (tile - 32) / bmp.height);
+                const w = bmp.width * s;
+                const h = bmp.height * s;
+                ctx.drawImage(bmp, x + (tile - w) / 2, y + (tile - h) / 2, w, h);
+                if (bmp.close) bmp.close();
+            }
+            ctx.fillStyle = '#222222';
+            ctx.font = '600 26px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${i + 1}. ${cloaiSlotOf(items[i])}`, x + tile / 2, y + tile + 40);
+        }
+        return await new Promise((resolve, reject) =>
+            canvas.toBlob(b => (b ? resolve(b) : reject(new Error('콜라주 생성 실패'))), 'image/png')
+        );
+    }
+
+    function cloaiWeatherLine() {
+        if (typeof cloaiWeather === 'undefined' || !cloaiWeather) return '';
+        return `오늘 날씨: ${cloaiWeatherInfo(cloaiWeather.code).label}, 기온 ${Math.round(cloaiWeather.min)}~${Math.round(cloaiWeather.max)}°`;
+    }
+
+    function cloaiBuildFashionPrompt(items, occasion) {
+        const lines = items
+            .map((it, i) => `${i + 1}번 ${cloaiSlotOf(it)}: ${it.name}${it.subcategory && it.subcategory !== '선택 안함' ? ` (${it.subcategory})` : ''}`)
+            .join('\n');
+        return [
+            '첨부한 이미지에 있는 옷들을 한 사람이 실제로 모두 입은 실착 예시 사진을 만들어줘.',
+            lines,
+            occasion ? `상황(TPO): ${occasion}` : '',
+            cloaiWeatherLine(),
+            '옷의 색상, 소재, 패턴, 디테일, 핏은 첨부 이미지와 최대한 똑같이 유지하고, 목록에 없는 옷은 추가하지 마.',
+            '머리부터 신발까지 보이는 전신, 일상에서 찍은 듯한 자연스러운 포즈와 배경, 세로 3:4 비율, 사진처럼 사실적으로.',
+        ].filter(Boolean).join('\n');
+    }
+
+    window.openGeminiWithOutfit = async function (items, occasion = '') {
+        items = cloaiSortBySlot((items || []).filter(Boolean));
+        if (items.length === 0) return window.showToast('옷을 1개 이상 선택해 주세요.');
+        if (items.length > 4) return window.showToast('옷은 최대 4개까지 선택할 수 있어요.');
+
+        const prompt = cloaiBuildFashionPrompt(items, occasion);
+        const url = 'https://gemini.google.com/app?q=' + encodeURIComponent(prompt);
+
+        // 1) 사진 콜라주를 클립보드에 복사 (사진이 없거나 미지원 브라우저면 프롬프트 텍스트를 복사)
+        let imageCopied = false;
+        if (items.some(i => i.img) && window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+            try {
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': cloaiBuildCollageBlob(items) })]);
+                imageCopied = true;
+            } catch (e) {
+                console.warn('이미지 복사 실패:', e);
+            }
+        }
+        if (!imageCopied) {
+            try { await navigator.clipboard.writeText(prompt); } catch (e) { /* 무시 */ }
+        }
+
+        // 2) 프롬프트가 채워진 Gemini 새 탭 열기 (팝업 차단 시 버튼 제공)
+        const win = window.open(url, '_blank');
+        if (!win) {
+            cloaiDialog('팝업이 차단됐어요. 아래 버튼으로 Gemini를 열어 주세요.', [
+                { label: '닫기', value: false },
+                { label: 'Gemini 열기', href: url, value: true, primary: true },
+            ]);
+        }
+        window.showToast(imageCopied
+            ? '사진을 복사했어요.\nGemini 입력창에서 Ctrl+V(붙여넣기) 후 전송하세요.'
+            : '프롬프트를 복사했어요.\nGemini 입력창에 붙여넣고 사진을 첨부해 주세요.', 5000);
+    };
+
+    // 옷장에서 체크한 옷으로 실착 예시 만들기
+    window.openGeminiFromSelection = function () {
+        const items = getSelectedOriginalIndices().map(i => window.clothesDB[i]);
+        return window.openGeminiWithOutfit(items, currentOccasion);
+    };
+
+    // 오늘의 코디로 실착 예시 만들기
+    window.openGeminiFromCodi = function () {
+        return window.openGeminiWithOutfit([currentOuter, currentTop, currentBottom, currentShoes], currentOccasion);
+    };
+
+    // 모바일 등에서 쓰는 '프롬프트만 복사'
+    window.copyPromptFromSelection = async function () {
+        const items = cloaiSortBySlot(getSelectedOriginalIndices().map(i => window.clothesDB[i]).filter(Boolean));
+        if (items.length === 0) return window.showToast('옷장에서 옷을 1개 이상 선택해 주세요.');
+        try {
+            await navigator.clipboard.writeText(cloaiBuildFashionPrompt(items, currentOccasion));
+            window.showToast('실착 예시 프롬프트를 복사했어요.');
+        } catch (e) {
+            window.showToast('복사에 실패했어요. 브라우저의 클립보드 권한을 확인해 주세요.');
+        }
+    };
+
+    /* ==================================================================
+     * ✅ v11 날씨 + 날짜 기반 오늘의 코디 (AI 모델 없이 동작)
+     *    날씨: Open-Meteo (무료, API 키 없음)
+     * ================================================================== */
+
+    const CLOAI_DEFAULT_LOCATION = { lat: 37.5665, lon: 126.9780, name: '서울' };
+    const CLOAI_WEATHER_CACHE_MIN = 30; // 같은 날 30분 안에는 다시 불러오지 않음
+
+    let currentOuter = null;
+    let cloaiWeather = null;
+    let cloaiWeatherReady = false;
+    let cloaiAutoMode = true; // 사용자가 직접 바꾸기 전까지는 옷장이 바뀌면 자동으로 다시 추천
+
+    // 옷 종류별 보온 단계 (1 얇음 ~ 5 매우 두꺼움)
+    const CLOAI_WARMTH = {
+        '티셔츠/민소매': 1, '셔츠/블라우스': 2, '맨투맨/스웨트': 3, '후드티셔츠': 3, '니트/스웨터': 4, '가디건': 3,
+        '바람막이/자켓': 2, '아노락': 2, '후드집업': 2, '블루종': 3, '라이더 자켓': 3, '블레이저 자켓': 3,
+        '슈트': 3, '플리스': 3, '코트': 4, '패딩': 5,
+        '반바지/버뮤다': 1, '트레이닝 팬츠': 2, '조거 팬츠': 2, '청바지': 3, '슬랙스/와이드팬츠': 3,
+        '슬리퍼/샌들': 1, '스니커즈/운동화': 3, '구두': 3, '부츠': 4,
+    };
+    // 세부 분류가 없을 때 이름으로 추정
+    const CLOAI_NAME_WARMTH = [
+        ['패딩', 5], ['롱패딩', 5], ['코트', 4], ['니트', 4], ['기모', 4], ['부츠', 4],
+        ['민소매', 1], ['나시', 1], ['반팔', 1], ['반바지', 1], ['샌들', 1], ['슬리퍼', 1], ['린넨', 1],
+    ];
+    const CLOAI_DEFAULT_WARMTH = { '상의': 2, '아우터': 3, '하의': 3, '신발': 3 };
+    const CLOAI_SEASON_TEMP = { '봄': 15, '여름': 27, '가을': 15, '겨울': 2 };
+    const CLOAI_SLOT_KEY = { '아우터': 'outer', '상의': 'top', '하의': 'bottom', '신발': 'shoes' };
+
+    // WMO 날씨 코드 → 아이콘, 이름
+    const CLOAI_WEATHER_CODES = [
+        [0, '☀️', '맑음'], [2, '🌤️', '구름 조금'], [3, '☁️', '흐림'], [48, '🌫️', '안개'],
+        [57, '🌦️', '이슬비'], [67, '🌧️', '비'], [77, '🌨️', '눈'], [82, '🌦️', '소나기'],
+        [86, '🌨️', '눈 소나기'], [99, '⛈️', '뇌우'],
+    ];
+
+    function cloaiEscape(str) {
+        return String(str ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    // 받침에 따라 조사 고르기: cloaiJosa('코트', '을', '를') → '코트를'
+    function cloaiJosa(word, withBatchim, withoutBatchim) {
+        const text = String(word).trim();
+        const code = text.charCodeAt(text.length - 1);
+        if (code < 0xAC00 || code > 0xD7A3) return text + withoutBatchim;
+        return text + ((code - 0xAC00) % 28 ? withBatchim : withoutBatchim);
+    }
+
+    function cloaiWeatherInfo(code) {
+        for (const [max, icon, label] of CLOAI_WEATHER_CODES) if (code <= max) return { icon, label };
+        return { icon: '🌡️', label: '날씨' };
+    }
+
+    function cloaiDateKey(d) {
+        return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    }
+
+    function cloaiSeasonOf(d) {
+        const m = d.getMonth() + 1;
+        if (m >= 3 && m <= 5) return '봄';
+        if (m >= 6 && m <= 8) return '여름';
+        if (m >= 9 && m <= 11) return '가을';
+        return '겨울';
+    }
+
+    /* ---------- 위치 → 날씨 ---------- */
+    async function cloaiGetLocation() {
+        const city = (localStorage.getItem('cloai_weather_city') || '').trim();
+        if (city) {
+            try {
+                const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ko&format=json`);
+                const j = await r.json();
+                if (j.results && j.results[0]) {
+                    return { lat: j.results[0].latitude, lon: j.results[0].longitude, name: j.results[0].name || city };
+                }
+                window.showToast(`'${city}' 지역을 찾지 못해서 현재 위치로 날씨를 불러와요.`);
+            } catch (e) {
+                console.warn('지역 검색 실패:', e);
+            }
+        }
+        if (navigator.geolocation) {
+            try {
+                const pos = await new Promise((resolve, reject) =>
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, maximumAge: 30 * 60 * 1000 })
+                );
+                return { lat: pos.coords.latitude, lon: pos.coords.longitude, name: '현재 위치' };
+            } catch (e) {
+                console.warn('위치 정보를 쓸 수 없음:', e);
+            }
+        }
+        return { ...CLOAI_DEFAULT_LOCATION, name: '서울 (기본값)' };
+    }
+
+    async function cloaiFetchWeather(force) {
+        const todayKey = cloaiDateKey(new Date());
+        const city = localStorage.getItem('cloai_weather_city') || '';
+        if (!force) {
+            try {
+                const cached = JSON.parse(localStorage.getItem('cloai_weather_cache') || 'null');
+                if (cached && cached.dateKey === todayKey && cached.city === city &&
+                    Date.now() - cached.fetchedAt < CLOAI_WEATHER_CACHE_MIN * 60000) return cached;
+            } catch (e) { /* 캐시 무시 */ }
+        }
+
+        const loc = await cloaiGetLocation();
+        const params = new URLSearchParams({
+            latitude: loc.lat,
+            longitude: loc.lon,
+            current: 'temperature_2m,apparent_temperature,weather_code',
+            daily: 'weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max',
+            timezone: 'auto',
+            forecast_days: '1',
+        });
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?' + params);
+        if (!res.ok) throw new Error('날씨 서버 응답 오류 ' + res.status);
+        const j = await res.json();
+        const d = j.daily;
+        const w = {
+            dateKey: todayKey, fetchedAt: Date.now(), city,
+            locationName: loc.name,
+            now: j.current.temperature_2m,
+            max: d.temperature_2m_max[0], min: d.temperature_2m_min[0],
+            feelsMax: d.apparent_temperature_max[0], feelsMin: d.apparent_temperature_min[0],
+            rainProb: d.precipitation_probability_max[0] ?? 0,
+            code: d.weather_code[0],
+        };
+        try { localStorage.setItem('cloai_weather_cache', JSON.stringify(w)); } catch (e) { /* 저장 공간 부족 시 무시 */ }
+        return w;
+    }
+
+    function cloaiRenderWeather() {
+        const today = new Date();
+        const days = ['일', '월', '화', '수', '목', '금', '토'];
+        const dateText = `${today.getMonth() + 1}월 ${today.getDate()}일 ${days[today.getDay()]}요일`;
+        const w = cloaiWeather;
+        const iconEl = document.getElementById('weatherIcon');
+        const dateEl = document.getElementById('weatherDate');
+        const sumEl = document.getElementById('weatherSummary');
+        const detailEl = document.getElementById('weatherDetail');
+        if (!iconEl) return;
+
+        if (!w) {
+            iconEl.textContent = '🗓️';
+            dateEl.textContent = dateText;
+            sumEl.textContent = `${cloaiSeasonOf(today)} 평균 기온 기준`;
+            detailEl.textContent = '날씨를 불러오지 못했어요. ↻ 버튼으로 다시 시도할 수 있어요.';
+            return;
+        }
+        const info = cloaiWeatherInfo(w.code);
+        iconEl.textContent = info.icon;
+        dateEl.textContent = `${dateText}, ${w.locationName}`;
+        sumEl.textContent = `${info.label} ${Math.round(w.now)}°`;
+        detailEl.textContent = `최고 ${Math.round(w.max)}° 최저 ${Math.round(w.min)}°, 비 올 확률 ${w.rainProb}%`;
+    }
+
+    window.refreshWeather = async function (force = false) {
+        if (force) document.getElementById('weatherSummary').textContent = '날씨를 다시 불러오는 중...';
+        try {
+            cloaiWeather = await cloaiFetchWeather(force);
+        } catch (e) {
+            console.error('날씨 불러오기 실패:', e);
+            cloaiWeather = null;
+            window.showToast('날씨를 불러오지 못했어요. 계절 평균 기온으로 추천할게요.');
+        }
+        cloaiWeatherReady = true;
+        cloaiRenderWeather();
+        cloaiAutoMode = true;
+        cloaiGenerateCodi();
+    };
+
+    /* ---------- 추천 계산 ---------- */
+    function cloaiTargets(t) {
+        if (t >= 28) return { top: 1, bottom: 1, shoes: 1, outer: 0, band: '무더운 날' };
+        if (t >= 23) return { top: 1, bottom: 2, shoes: 3, outer: 0, band: '더운 날' };
+        if (t >= 20) return { top: 2, bottom: 3, shoes: 3, outer: 0, band: '선선한 날' };
+        if (t >= 17) return { top: 3, bottom: 3, shoes: 3, outer: 2, outerOptional: true, band: '조금 쌀쌀한 날' };
+        if (t >= 12) return { top: 3, bottom: 3, shoes: 3, outer: 3, band: '쌀쌀한 날' };
+        if (t >= 9) return { top: 4, bottom: 3, shoes: 3, outer: 3, band: '꽤 쌀쌀한 날' };
+        if (t >= 5) return { top: 4, bottom: 3, shoes: 4, outer: 4, band: '추운 날' };
+        return { top: 4, bottom: 3, shoes: 4, outer: 5, band: '매우 추운 날' };
+    }
+
+    function cloaiWarmth(item, cat) {
+        if (CLOAI_WARMTH[item.subcategory] != null) return CLOAI_WARMTH[item.subcategory];
+        const name = item.name || '';
+        for (const [word, value] of CLOAI_NAME_WARMTH) if (name.includes(word)) return value;
+        return CLOAI_DEFAULT_WARMTH[cat] ?? 3;
+    }
+
+    function cloaiBuildContext() {
+        const today = new Date();
+        const season = cloaiSeasonOf(today);
+        const w = cloaiWeather;
+        const temp = w ? Math.round((w.feelsMax + w.feelsMin) / 2) : CLOAI_SEASON_TEMP[season];
+        const targets = cloaiTargets(temp);
+        const range = w ? w.max - w.min : 0;
+        const code = w ? w.code : 0;
+        const rainy = !!w && (w.rainProb >= 50 || (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95);
+        const snowy = !!w && ((code >= 71 && code <= 77) || code === 85 || code === 86);
+
+        let needOuter = targets.outer > 0 && !targets.outerOptional;
+        if (targets.outerOptional && (range >= 8 || (w && w.feelsMin < 14))) needOuter = true;
+        // 낮엔 덥지만 아침저녁이 쌀쌀한 날은 얇은 겉옷 추가
+        if (!needOuter && targets.outer === 0 && range >= 10 && w && w.min < 18) { needOuter = true; targets.outer = 2; }
+
+        return { today, season, temp, targets, range, rainy, snowy, needOuter, weather: w, occasion: currentOccasion };
+    }
+
+    function cloaiScore(item, cat, ctx, jitter) {
+        const target = ctx.targets[CLOAI_SLOT_KEY[cat]] || 3;
+        let s = -Math.abs(cloaiWarmth(item, cat) - target) * 3;
+        if (item.occasions && item.occasions.includes(ctx.occasion)) s += 3;
+        if (item.season === '사계절' || item.season === ctx.season) s += 1;
+        else if ((item.season === '여름' && ctx.season === '겨울') || (item.season === '겨울' && ctx.season === '여름')) s -= 4;
+        // 달력 계절과 실제 기온이 다를 때도 계절 옷이 엇나가지 않게
+        if (item.season === '겨울' && ctx.temp >= 23) s -= 4;
+        if (item.season === '여름' && ctx.temp <= 12) s -= 4;
+        if (ctx.rainy) {
+            if (cat === '신발' && item.subcategory === '슬리퍼/샌들' && ctx.temp < 25) s -= 3;
+            if (cat === '신발' && (item.subcategory === '부츠' || item.subcategory === '스니커즈/운동화')) s += 1;
+            if (cat === '아우터' && (item.subcategory === '바람막이/자켓' || item.subcategory === '아노락')) s += 2;
+        }
+        if (ctx.snowy && cat === '신발' && item.subcategory === '부츠') s += 2;
+        if (jitter) s += Math.random() * 1.5; // 매번 같은 조합만 나오지 않게
+        return s;
+    }
+
+    function cloaiCandidates(cat) {
+        return window.clothesDB.filter(c => c.status === '보관중' && (c.categories || []).includes(cat));
+    }
+
+    // avoidIds: '다른 코디' 요청 시 피할 옷. 날씨에 너무 안 맞는 옷밖에 없으면 그냥 가장 잘 맞는 옷을 고릅니다.
+    function cloaiPick(cat, ctx, avoidIds) {
+        const ranked = cloaiCandidates(cat)
+            .map(c => ({ c, s: cloaiScore(c, cat, ctx, true) }))
+            .sort((a, b) => b.s - a.s);
+        if (ranked.length === 0) return null;
+        if (!avoidIds) return ranked[0].c;
+        const alt = ranked.find(x => !avoidIds.has(String(x.c.id)));
+        return alt && alt.s >= ranked[0].s - 4 ? alt.c : ranked[0].c;
+    }
+
+    function cloaiBuildReason(ctx) {
+        const w = ctx.weather;
+        const parts = [];
+        const where = !w || w.locationName === '현재 위치' ? '오늘은' : `오늘 ${cloaiJosa(w.locationName.replace(' (기본값)', ''), '은', '는')}`;
+        if (w) parts.push(`${where} 최고 ${Math.round(w.max)}° 최저 ${Math.round(w.min)}°, 체감 약 ${ctx.temp}°의 ${ctx.targets.band}이에요.`);
+        else parts.push(`날씨 정보가 없어서 ${ctx.season} 평균 기온(약 ${ctx.temp}°) 기준으로 골랐어요.`);
+
+        const names = [currentOuter, currentTop, currentBottom].filter(Boolean).map(c => c.name);
+        parts.push(`${ctx.occasion}에 어울리는 ${names.join(', ')} 조합을 추천해요.`);
+
+        if (ctx.needOuter && !currentOuter) parts.push('겉옷이 필요한 날씨인데 보관중인 아우터가 없어요.');
+        else if (currentOuter && ctx.range >= 10) parts.push(`일교차가 ${Math.round(ctx.range)}°나 되니 ${cloaiJosa(currentOuter.name, '을', '를')} 꼭 챙기세요.`);
+
+        if (ctx.snowy) parts.push('눈 소식이 있어요. 미끄럽지 않은 신발이 좋아요.');
+        else if (ctx.rainy) parts.push(`비 올 확률이 ${w.rainProb}%예요. 우산을 챙기세요.`);
+        return parts.join(' ');
+    }
+
+    function cloaiGenerateCodi(options = {}) {
+        const ctx = cloaiBuildContext();
+        const avoid = options.avoidCurrent
+            ? new Set([currentTop, currentBottom].filter(Boolean).map(c => String(c.id)))
+            : null;
+
+        currentTop = cloaiPick('상의', ctx, avoid);
+        currentBottom = cloaiPick('하의', ctx, avoid);
+        currentShoes = cloaiPick('신발', ctx);
+        currentOuter = ctx.needOuter ? cloaiPick('아우터', ctx) : null;
+
+        if (!currentTop || !currentBottom) {
+            const box = document.getElementById('recommendBox');
+            box.classList.add('active');
+            box.innerHTML = `
+                <div style="padding:20px; text-align:center; color:#ef4444; font-weight:700;">
+                    ⚠️ 코디 구성 실패<br>
+                    <span style="font-size:13px; color:#64748b; font-weight:normal;">지금 입을 수 있는 상의와 하의가 부족해요. 옷을 추가 등록하거나 세탁을 완료해 주세요.</span>
+                </div>`;
+            const wearBtn = document.getElementById('btnWear');
+            wearBtn.disabled = true; wearBtn.className = "btn-wear";
+            return;
+        }
+        renderCodiResultUI(cloaiBuildReason(ctx));
+    }
+
+    // 클라우드에서 옷장이 바뀌었을 때 (Firebase 모듈이 호출)
+    window.onClosetDataChanged = function () {
+        if (!cloaiWeatherReady) return;
+        const relink = (c) => c ? window.clothesDB.find(x => String(x.id) === String(c.id) && x.status === '보관중') || null : null;
+        const hadPicks = !!(currentTop && currentBottom);
+        currentTop = relink(currentTop);
+        currentBottom = relink(currentBottom);
+        currentShoes = relink(currentShoes);
+        currentOuter = relink(currentOuter);
+        if (!cloaiAutoMode) return;
+        if (!currentTop || !currentBottom || !hadPicks) cloaiGenerateCodi();
+    };
+
+    /* ---------- 화면 ---------- */
+    const CLOAI_EMPTY_SLOT = `<svg class="icon-svg icon-large"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+
+    function cloaiSlotHTML(item, cat, typeLabel, fallbackName) {
+        const img = item && item.img
+            ? `<img src="${item.img}" class="coordination-slot" alt="">`
+            : `<div class="coordination-slot no-img">${CLOAI_EMPTY_SLOT}</div>`;
+        return `
+                <div class="slot-container" onclick="shuffleSingleSlot('${cat}')">
+                    ${img}
+                    <div class="reroll-overlay">🔄 다른 ${cat} 보기</div>
+                    <div class="slot-info">
+                        <div class="slot-type">${typeLabel}</div>
+                        <div class="slot-label">${cloaiEscape(item ? item.name : fallbackName)}</div>
+                    </div>
+                </div>`;
+    }
+
+    function renderCodiResultUI(reason) {
+        const box = document.getElementById('recommendBox');
+        box.classList.add('active');
+        const slots = [];
+        if (currentOuter) slots.push(cloaiSlotHTML(currentOuter, '아우터', 'OUTER'));
+        slots.push(cloaiSlotHTML(currentTop, '상의', 'TOP'));
+        slots.push(cloaiSlotHTML(currentBottom, '하의', 'BOTTOM'));
+        slots.push(cloaiSlotHTML(currentShoes, '신발', 'SHOES', '신발 없음'));
+        box.innerHTML = `
+            <div class="coordination-view" style="--slot-count: ${slots.length};">${slots.join('')}
+            </div>
+            <div class="codi-reason">
+                <strong>☀️ 오늘의 코디 이유</strong><br>
+                ${cloaiEscape(reason)}
+            </div>
+            <button class="btn-gemini-photo" onclick="openGeminiFromCodi()">👕 이 코디로 실착 예시 보기</button>
+        `;
+        const wearBtn = document.getElementById('btnWear');
+        wearBtn.disabled = false;
+        wearBtn.className = "btn-wear active";
+    }
+
+    // 다른 코디 추천받기
+    async function recommendCodi() {
+        cloaiAutoMode = true;
+        if (!cloaiWeatherReady) return window.refreshWeather(false);
+        const key = () => [currentOuter, currentTop, currentBottom, currentShoes].map(c => c ? c.id : '-').join('|');
+        const before = key();
+        cloaiGenerateCodi({ avoidCurrent: true });
+        if (key() === before) window.showToast('오늘 날씨에 맞는 다른 조합이 없어요.\n옷 사진을 눌러 하나씩 바꿔 볼 수 있어요.');
+    }
+
+    // 슬롯 하나만 날씨에 맞는 다음 후보로 교체
+    function shuffleSingleSlot(cat) {
+        const ctx = cloaiBuildContext();
+        const current = { '아우터': currentOuter, '상의': currentTop, '하의': currentBottom, '신발': currentShoes }[cat];
+        const ranked = cloaiCandidates(cat)
+            .map(c => ({ c, s: cloaiScore(c, cat, ctx, false) }))
+            .sort((a, b) => b.s - a.s)
+            .map(x => x.c);
+        if (ranked.length === 0) return window.showToast(`보관중인 ${cloaiJosa(cat, '이', '가')} 없어요.`);
+        if (ranked.length === 1 && current) return window.showToast(`교체할 수 있는 다른 ${cloaiJosa(cat, '이', '가')} 없어요.`);
+
+        const idx = current ? ranked.findIndex(c => String(c.id) === String(current.id)) : -1;
+        const next = ranked[(idx + 1) % ranked.length];
+        if (cat === '아우터') currentOuter = next;
+        else if (cat === '상의') currentTop = next;
+        else if (cat === '하의') currentBottom = next;
+        else currentShoes = next;
+
+        cloaiAutoMode = false;
+        renderCodiResultUI(cloaiBuildReason(ctx));
+    }
+
+    // 오늘 이 코디 입기 → 상의·하의는 세탁중으로 (아우터·신발·악세사리는 제외)
+    async function wearCodi() {
+        if (!currentTop || !currentBottom) return;
+        const toWash = [currentTop, currentBottom];
+        const online = window.isCloudOnline && window.isCloudOnline();
+        if (online) {
+            const results = await Promise.all(toWash.map(item => window.cloudUpdateItemStatus(item.id, '세탁중')));
+            if (results.includes(false)) return;
+        }
+        const ids = new Set(toWash.map(c => String(c.id)));
+        window.clothesDB.forEach(c => { if (ids.has(String(c.id))) c.status = '세탁중'; });
+        saveToStorage();
+        cloaiAutoMode = false;
+        resetRecommendUI('오늘의 코디를 기록했어요.<br>입은 상의와 하의는 세탁중으로 옮겼어요.');
+        window.showToast('오늘의 코디를 기록했어요.');
+    }
+
+    function resetRecommendUI(messageHTML) {
+        const box = document.getElementById('recommendBox');
+        box.classList.remove('active');
+        box.innerHTML = `
+            <div id="defaultText" style="color: #64748b; line-height: 1.6; text-align: center;">
+                <svg class="icon-svg icon-large" style="margin-bottom:14px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <br>${messageHTML || '오늘 날씨에 맞는 코디를 준비하고 있어요.'}
+            </div>
+        `;
+        const wearBtn = document.getElementById('btnWear');
+        wearBtn.disabled = true; wearBtn.className = "btn-wear";
+    }
+
+    function changeOccasion(mode, btn) {
+        currentOccasion = mode;
+        document.querySelectorAll('.occasion-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        cloaiAutoMode = true;
+        if (cloaiWeatherReady) cloaiGenerateCodi();
+        else resetRecommendUI();
+    }
+
+    // 페이지를 열면 날짜 확인 → 날씨 불러오기 → 오늘의 코디 자동 생성
+    function cloaiInitToday() {
+        const day = new Date().getDay();
+        if ((day === 0 || day === 6) && currentOccasion === '출근길') {
+            const btn = Array.from(document.querySelectorAll('.occasion-btn')).find(b => (b.getAttribute('onclick') || '').includes("'일상 생활'"));
+            if (btn) {
+                currentOccasion = '일상 생활';
+                document.querySelectorAll('.occasion-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+        }
+        const box = document.getElementById('recommendBox');
+        box.innerHTML = `
+            <div style="text-align:center; padding:30px; color:#64748b;">
+                <div style="margin: 0 auto 15px; width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: #00b4d8; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <p style="font-weight:700; color:#0f172a; margin-bottom:5px;">오늘 날씨를 확인하는 중...</p>
+                <p style="font-size:12px; color:#94a3b8;">날씨와 날짜에 맞는 코디를 자동으로 골라 드릴게요.</p>
+            </div>`;
+        window.refreshWeather(false);
+    }
+
+    window.onload = function() { updateClosetUI(); cloaiInitToday(); }
+</script>
+</body>
+</html>
